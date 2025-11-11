@@ -111,7 +111,9 @@ class Customer extends Model
     public function regularPackage(): ?Package
     {
         return $this->activePackages()
-            ->where('package_type', 'regular')
+            ->whereHas('type', function($query) {
+                $query->where('name', 'regular');
+            })
             ->first();
     }
 
@@ -121,7 +123,9 @@ class Customer extends Model
     public function specialPackages()
     {
         return $this->activePackages()
-            ->where('package_type', 'special')
+            ->whereHas('type', function($query) {
+                $query->where('name', 'special');
+            })
             ->get();
     }
 
@@ -197,7 +201,9 @@ class Customer extends Model
     public function scopeWithRegularPackage(Builder $query): Builder
     {
         return $query->whereHas('customerPackages.package', function ($q) {
-            $q->where('package_type', 'regular');
+            $q->whereHas('type', function($query) {
+                $query->where('name', 'regular');
+            });
         })->whereHas('customerPackages', function ($q) {
             $q->where('status', 'active')
               ->where('is_active', true);
@@ -210,7 +216,9 @@ class Customer extends Model
     public function scopeWithSpecialPackages(Builder $query): Builder
     {
         return $query->whereHas('customerPackages.package', function ($q) {
-            $q->where('package_type', 'special');
+            $q->whereHas('type', function($query) {
+                $query->where('name', 'special');
+            });
         })->whereHas('customerPackages', function ($q) {
             $q->where('status', 'active')
               ->where('is_active', true);
@@ -268,7 +276,9 @@ class Customer extends Model
     {
         return $this->activeCustomerPackages()
             ->whereHas('package', function ($q) {
-                $q->where('package_type', 'regular');
+                $q->whereHas('type', function($query) {
+                    $query->where('name', 'regular');
+                });
             })
             ->exists();
     }
@@ -280,7 +290,9 @@ class Customer extends Model
     {
         return $this->activeCustomerPackages()
             ->whereHas('package', function ($q) {
-                $q->where('package_type', 'special');
+                $q->whereHas('type', function($query) {
+                    $query->where('name', 'special');
+                });
             })
             ->exists();
     }
@@ -313,7 +325,9 @@ class Customer extends Model
     {
         $regularPackage = $this->activeCustomerPackages()
             ->whereHas('package', function ($q) {
-                $q->where('package_type', 'regular');
+                $q->whereHas('type', function($query) {
+                    $query->where('name', 'regular');
+                });
             })
             ->with('package')
             ->first();
@@ -324,7 +338,9 @@ class Customer extends Model
 
         $specialCount = $this->activeCustomerPackages()
             ->whereHas('package', function ($q) {
-                $q->where('package_type', 'special');
+                $q->whereHas('type', function($query) {
+                    $query->where('name', 'special');
+                });
             })
             ->count();
         

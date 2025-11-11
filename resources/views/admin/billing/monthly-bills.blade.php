@@ -631,11 +631,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // More robust base URL detection
     let basePath = window.location.origin;
     // Check if we're in a subdirectory setup
-    if (window.location.pathname.includes('/ik/netbill-bd/')) {
+    if (window.location.pathname.includes('C:\wamp64\www\netbill-bd')) {
         if (window.location.pathname.includes('/public/')) {
-            basePath += '/ik/netbill-bd/public';
+            basePath += 'C:\wamp64\www\netbill-bd';
         } else {
-            basePath += '/ik/netbill-bd';
+            basePath += 'C:\wamp64\www\netbill-bd';
         }
     }
     $('#addPaymentForm').attr('action', basePath + '/admin/billing/record-payment/' + invoiceId);

@@ -33,13 +33,31 @@ Route::prefix('admin')->middleware(['web', 'auth'])->name('admin.')->group(funct
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/refresh', [DashboardController::class, 'refreshData'])->name('dashboard.refresh');
     
-    // Package Management
-    Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
-    Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');
-    Route::get('/packages/{id}', [PackageController::class, 'show'])->name('packages.show');
-    Route::put('/packages/{id}', [PackageController::class, 'update'])->name('packages.update');
-    Route::delete('/packages/{id}', [PackageController::class, 'destroy'])->name('packages.destroy');
-    Route::post('/packages/{id}/toggle-status', [PackageController::class, 'toggleStatus'])->name('packages.toggle-status');
+   
+    // ✅ FIXED: Package Management Routes
+    Route::prefix('packages')->name('packages.')->group(function () {
+        Route::get('/', [PackageController::class, 'index'])->name('index');
+        Route::get('/create', [PackageController::class, 'create'])->name('create');
+        Route::get('/types', [PackageController::class, 'packageTypes'])->name('types');
+        Route::get('/test', function () {
+            return view('admin.packages.test');
+        })->name('test');
+        Route::get('/debug/{id}', function ($id) {
+            $package = \App\Models\Package::where('p_id', $id)->first();
+            return response()->json([
+                'found' => $package ? true : false,
+                'package' => $package,
+                'all_packages' => \App\Models\Package::select('p_id', 'name')->get()
+            ]);
+        })->name('debug');
+        Route::post('/', [PackageController::class, 'store'])->name('store');
+        Route::post('/add-type', [PackageController::class, 'addPackageType'])->name('add-type');
+        Route::delete('/delete-type/{id}', [PackageController::class, 'deletePackageType'])->name('delete-type');
+        Route::get('/{id}', [PackageController::class, 'show'])->name('show');
+        Route::put('/{id}', [PackageController::class, 'update'])->name('update');
+        Route::delete('/{id}', [PackageController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/toggle-status', [PackageController::class, 'toggleStatus'])->name('toggle-status');
+    });
 
     // Customer Management
     Route::resource('customers', CustomerController::class)->parameters([

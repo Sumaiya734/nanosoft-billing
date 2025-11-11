@@ -54,8 +54,13 @@ class BillingController extends Controller
         try {
             $customer = Customer::with(['activePackages'])->findOrFail($id);
             
-            $regularPackages = Package::where('package_type', 'regular')->get();
-            $specialPackages = Package::where('package_type', 'special')->get();
+            $regularPackages = Package::whereHas('type', function($query) {
+                $query->where('name', 'regular');
+            })->get();
+            
+            $specialPackages = Package::whereHas('type', function($query) {
+                $query->where('name', 'special');
+            })->get();
 
             return view('admin.billing.generate-bill', compact(
                 'customer', 
@@ -195,7 +200,7 @@ class BillingController extends Controller
             'amount' => 'required|numeric|min:0',
             'payment_method' => 'required|string|max:50',
             'payment_date' => 'required|date',
-            'transaction_id' => 'nullable|string|max:100',
+            //'transaction_id' => 'nullable|string|max:100',
             'note' => 'nullable|string'
         ]);
 
@@ -208,7 +213,7 @@ class BillingController extends Controller
                 'amount' => $request->amount,
                 'payment_method' => $request->payment_method,
                 'payment_date' => $request->payment_date,
-                'transaction_id' => $request->transaction_id,
+                //'transaction_id' => $request->transaction_id,
                 'note' => $request->note
             ]);
 
@@ -742,7 +747,7 @@ class BillingController extends Controller
                 'status' => $request->status,
                 'notes' => $request->notes,
                 'is_locked' => false,
-                'created_by' => auth()->id()
+                'created_by' => Auth::id()
             ]);
 
             return redirect()->route('admin.billing.billing-invoices')
@@ -783,7 +788,7 @@ class BillingController extends Controller
                 'status' => $monthData['status'],
                 'notes' => 'Generated from customer packages and invoices',
                 'is_locked' => false,
-                'created_by' => auth()->id()
+                'created_by' => Auth::id()
             ]);
 
             return redirect()->route('admin.billing.billing-invoices')

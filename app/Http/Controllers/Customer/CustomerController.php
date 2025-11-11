@@ -150,8 +150,13 @@ class CustomerController extends Controller
 
     public function create()
     {
-        $regularPackages = Package::where('package_type', 'regular')->get();
-        $specialPackages = Package::where('package_type', 'special')->get();
+        $regularPackages = Package::whereHas('type', function($query) {
+            $query->where('name', 'regular');
+        })->get();
+        
+        $specialPackages = Package::whereHas('type', function($query) {
+            $query->where('name', 'special');
+        })->get();
         
         return view('admin.customers.create', compact('regularPackages', 'specialPackages'));
     }
@@ -267,8 +272,14 @@ class CustomerController extends Controller
     public function edit($id)
     {
         $customer = CustomerModel::with(['user', 'customerPackages.package'])->findOrFail($id);
-        $regularPackages = Package::where('package_type', 'regular')->get();
-        $specialPackages = Package::where('package_type', 'special')->get();
+        
+        $regularPackages = Package::whereHas('type', function($query) {
+            $query->where('name', 'regular');
+        })->get();
+        
+        $specialPackages = Package::whereHas('type', function($query) {
+            $query->where('name', 'special');
+        })->get();
         
         return view('admin.customers.edit', compact('customer', 'regularPackages', 'specialPackages'));
     }

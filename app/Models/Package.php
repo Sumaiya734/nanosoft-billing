@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Package extends Model
 {
@@ -15,7 +16,7 @@ class Package extends Model
 
     protected $fillable = [
         'name',
-        'package_type',
+        'package_type_id', // Changed from package_type
         'description',
         'monthly_price',
         'created_at',
@@ -27,6 +28,11 @@ class Package extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(PackageType::class, 'package_type_id');
+    }
 
     public function customers(): BelongsToMany
     {
@@ -48,14 +54,21 @@ class Package extends Model
                     ->wherePivot('is_active', 1);
     }
 
-    public function scopeRegular($query)
+    // Helper methods to check package type
+    public function isRegular(): bool
     {
-        return $query->where('package_type', 'regular');
+        return $this->type && $this->type->name === 'regular';
     }
 
-    public function scopeSpecial($query)
+    public function isSpecial(): bool
     {
-        return $query->where('package_type', 'special');
+        return $this->type && $this->type->name === 'special';
+    }
+
+    // Accessor for package type name
+    public function getPackageTypeAttribute(): string
+    {
+        return $this->type ? $this->type->name : '';
     }
 
     public function getFormattedPriceAttribute(): string
@@ -71,16 +84,6 @@ class Package extends Model
     public function getFormattedTotalPriceAttribute(): string
     {
         return $this->formatted_price;
-    }
-
-    public function isRegular(): bool
-    {
-        return $this->package_type === 'regular';
-    }
-
-    public function isSpecial(): bool
-    {
-        return $this->package_type === 'special';
     }
 
     public function getCustomerCount(): int

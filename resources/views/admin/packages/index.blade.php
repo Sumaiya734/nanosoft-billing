@@ -20,9 +20,9 @@
             <button class="btn btn-outline-primary" id="exportBtn">
                 <i class="fas fa-download me-1"></i>Export
             </button>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPackageModal">
+            <a href="{{ route('admin.packages.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i>Create Package
-            </button>
+            </a>
         </div>
     </div>
 
@@ -141,21 +141,28 @@
                             <td class="fw-bold">{{ $package->p_id }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <div class="package-icon me-3 {{ $package->package_type === 'regular' ? 'bg-primary' : 'bg-warning' }}">
-                                        <i class="fas {{ $package->package_type === 'regular' ? 'fa-wifi' : 'fa-star' }}"></i>
+                                    <div class="package-icon me-3 {{ $package->isRegular() ? 'bg-primary' : 'bg-warning' }}">
+                                        <i class="fas {{ $package->isRegular() ? 'fa-wifi' : 'fa-star' }}"></i>
                                     </div>
                                     <div>
                                         <h6 class="mb-1">{{ $package->name }}</h6>
-                                        <small class="text-muted">{{ $package->package_type === 'regular' ? 'Regular Package' : 'Special Package' }}</small>
+                                        <small class="text-muted">{{ $package->type->name ?? 'N/A' }}</small>
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                @if($package->package_type === 'regular')
-                                <span class="badge bg-primary">Regular Package</span>
-                                @else
-                                <span class="badge bg-warning text-dark">Special Package</span>
-                                @endif
+                                @php
+                                    $typeName = $package->type->name ?? 'Unknown';
+                                    $badgeClass = match(strtolower($typeName)) {
+                                        'regular' => 'bg-primary',
+                                        'special' => 'bg-warning text-dark',
+                                        'premium' => 'bg-success',
+                                        'enterprise' => 'bg-info',
+                                        'custom' => 'bg-purple text-white',
+                                        default => 'bg-secondary'
+                                    };
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">{{ ucfirst($typeName) }}</span>
                             </td>
                             <td>
                                 <p class="mb-1">{{ \Illuminate\Support\Str::limit($package->description, 60) }}</p>
@@ -165,13 +172,21 @@
                             <td class="text-end">
                                 <h6 class="text-success mb-0">৳{{ number_format($package->monthly_price, 2) }}<small class="text-muted">/month</small></h6>
                             </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary edit-package" data-id="{{ $package->p_id }}" title="Edit">
+                            <td class="text-center action-column">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary edit-package" 
+                                            data-id="{{ $package->p_id }}" 
+                                            data-name="{{ $package->name }}"
+                                            title="Edit Package">
                                         <i class="fas fa-edit"></i>
+                                        <span class="d-none d-md-inline ms-1">Edit</span>
                                     </button>
-                                    <button class="btn btn-outline-danger delete-package" data-id="{{ $package->p_id }}" title="Delete">
+                                    <button type="button" class="btn btn-outline-danger delete-package" 
+                                            data-id="{{ $package->p_id }}" 
+                                            data-name="{{ $package->name }}"
+                                            title="Delete Package">
                                         <i class="fas fa-trash"></i>
+                                        <span class="d-none d-md-inline ms-1">Delete</span>
                                     </button>
                                 </div>
                             </td>
@@ -192,57 +207,6 @@
                     Showing {{ $packages->count() }} of {{ $stats['total_packages'] ?? $packages->count() }} packages
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Create Package Modal -->
-<div class="modal fade" id="createPackageModal" tabindex="-1" aria-labelledby="createPackageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form id="createPackageForm">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title" id="createPackageModalLabel">Create New Package</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body">
-                    <div id="createErrors" class="alert alert-danger d-none"></div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Package Name *</label>
-                            <input type="text" name="name" class="form-control" placeholder="e.g., Basic Speed" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Package Type *</label>
-                            <input type="text" name="package_type" class="form-control" placeholder="e.g., regular, special, premium" required>
-                            <small class="text-muted">Enter package type (regular, special, etc.)</small>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Price (৳/month) *</label>
-                            <input type="number" name="monthly_price" class="form-control" placeholder="500" step="0.01" min="0" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Description *</label>
-                        <textarea class="form-control" name="description" rows="3" placeholder="Package description..." required></textarea>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="createPackageBtn">
-                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
-                        Create Package
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -278,8 +242,12 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Package Type *</label>
-                                <input type="text" name="package_type" id="edit_package_type" class="form-control" required>
-                                <small class="text-muted">Enter package type (regular, special, etc.)</small>
+                                <select name="package_type_id" id="edit_package_type_id" class="form-control" required>
+                                    <option value="">Select Package Type</option>
+                                    @foreach($packageTypes as $type)
+                                        <option value="{{ $type->id }}">{{ ucfirst($type->name) }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
 
@@ -361,14 +329,85 @@
         vertical-align: middle;
         padding: 16px 12px;
     }
+
+    .action-column {
+        white-space: nowrap;
+    }
+
+    .action-column .btn-group {
+        display: inline-flex;
+    }
+
+    .action-column .btn {
+        min-width: 36px;
+        transition: all 0.2s ease;
+    }
+
+    .action-column .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .action-column .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .action-column {
+            position: sticky;
+            right: 0;
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .table thead th:last-child {
+            position: sticky;
+            right: 0;
+            background-color: #f8f9fa;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .card-header {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-header .d-flex {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .search-box {
+            width: 100% !important;
+            min-width: auto !important;
+        }
+
+        .action-column .btn span {
+            display: none !important;
+        }
+    }
 </style>
 @endsection
 
 @section('scripts')
 <script>
+    console.log('🚀 Package management script loaded');
+    
     (function() {
+        console.log('📦 Initializing package management...');
+        
         // CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        console.log('🔑 CSRF Token:', csrfToken ? 'Found' : 'Missing');
 
         // Toast helper
         function showToast(message, type = 'success') {
@@ -433,94 +472,85 @@
             });
         });
 
-        // CREATE: submit form
-        document.getElementById('createPackageForm')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const form = e.target;
-            const btn = document.getElementById('createPackageBtn');
-            const spinner = btn.querySelector('.spinner-border');
-            
-            btn.disabled = true;
-            spinner.classList.remove('d-none');
-            document.getElementById('createErrors').classList.add('d-none');
-
-            const formData = new FormData(form);
-
-            try {
-                const res = await fetch('{{ route("admin.packages.store") }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                });
-
-                const json = await res.json();
-
-                if (!res.ok) {
-                    showValidationErrors(document.getElementById('createErrors'), json.errors || json.message || 'Failed to create package');
-                    return;
-                }
-
-                if (json.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('createPackageModal')).hide();
-                    showToast(json.message || 'Package created successfully!', 'success');
-                    form.reset();
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    showValidationErrors(document.getElementById('createErrors'), json.message || 'Unknown error occurred');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showValidationErrors(document.getElementById('createErrors'), 'Network error occurred');
-            } finally {
-                btn.disabled = false;
-                spinner.classList.add('d-none');
-            }
-        });
-
-        // EDIT: Open modal
+        // EDIT: Open modal with improved error handling
+        console.log('✅ Edit button listener attached');
+        
         document.body.addEventListener('click', function(e) {
+            console.log('👆 Click detected on:', e.target);
+            
             const editBtn = e.target.closest('.edit-package');
             if (editBtn) {
+                console.log('✏️ Edit button clicked!', editBtn);
+                e.preventDefault();
                 const pId = editBtn.getAttribute('data-id');
-                openEditModal(pId);
+                const packageName = editBtn.getAttribute('data-name');
+                console.log('📝 Package ID:', pId, 'Name:', packageName);
+                
+                // Disable button temporarily
+                editBtn.disabled = true;
+                const originalHtml = editBtn.innerHTML;
+                editBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                openEditModal(pId, packageName).finally(() => {
+                    editBtn.disabled = false;
+                    editBtn.innerHTML = originalHtml;
+                });
             }
         });
 
-        async function openEditModal(pId) {
-            document.getElementById('editErrors').classList.add('d-none');
-            document.getElementById('editLoading').style.display = '';
-            document.getElementById('editFields').style.display = 'none';
+        async function openEditModal(pId, packageName) {
+            const errorsEl = document.getElementById('editErrors');
+            const loadingEl = document.getElementById('editLoading');
+            const fieldsEl = document.getElementById('editFields');
+            
+            errorsEl.classList.add('d-none');
+            loadingEl.style.display = '';
+            fieldsEl.style.display = 'none';
 
             const modalEl = document.getElementById('editPackageModal');
             const modal = new bootstrap.Modal(modalEl);
             modal.show();
 
             try {
-                const res = await fetch(`/admin/packages/${pId}`, {
-                    headers: { 'Accept': 'application/json' }
+                const url = `{{ url('admin/packages') }}/${pId}`;
+                console.log('📡 Fetching package from:', url);
+                
+                const res = await fetch(url, {
+                    headers: { 
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
                 
-                if (!res.ok) throw new Error('Failed to fetch package');
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Failed to fetch package (${res.status})`);
+                }
                 
                 const pkg = await res.json();
 
-                // Populate fields
-                document.getElementById('edit_p_id').value = pkg.p_id;
+                // Populate fields with validation
+                document.getElementById('edit_p_id').value = pkg.p_id || pId;
                 document.getElementById('edit_name').value = pkg.name || '';
-                document.getElementById('edit_package_type').value = pkg.package_type || '';
+                document.getElementById('edit_package_type_id').value = pkg.package_type_id || '';
                 document.getElementById('edit_monthly_price').value = pkg.monthly_price || '';
                 document.getElementById('edit_description').value = pkg.description || '';
 
-                document.getElementById('editLoading').style.display = 'none';
-                document.getElementById('editFields').style.display = '';
+                loadingEl.style.display = 'none';
+                fieldsEl.style.display = '';
+                
+                // Update modal title with package name
+                document.getElementById('editPackageModalLabel').textContent = `Edit Package: ${pkg.name || packageName}`;
             } catch (err) {
-                console.error('Error:', err);
-                document.getElementById('editLoading').innerHTML = `
-                    <div class="alert alert-danger">Failed to load package details. Please try again.</div>
+                console.error('Error loading package:', err);
+                loadingEl.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${err.message || 'Failed to load package details. Please try again.'}
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 `;
+                showToast('Failed to load package details', 'danger');
             }
         }
 
@@ -541,9 +571,11 @@
             document.getElementById('editErrors').classList.add('d-none');
 
             const formData = new FormData(form);
+            const url = `{{ url('admin/packages') }}/${pId}`;
+            console.log('📡 Updating package at:', url);
 
             try {
-                const res = await fetch(`/admin/packages/${pId}`, {
+                const res = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
@@ -576,46 +608,93 @@
             }
         }
 
-        // DELETE: package
+        // DELETE: package with improved confirmation and feedback
+        console.log('✅ Delete button listener attached');
+        
         document.body.addEventListener('click', function(e) {
             const delBtn = e.target.closest('.delete-package');
             if (!delBtn) return;
-            const pId = delBtn.getAttribute('data-id');
             
-            if (confirm('Are you sure you want to delete this package? This action cannot be undone.')) {
-                deletePackage(pId);
+            console.log('🗑️ Delete button clicked!', delBtn);
+            e.preventDefault();
+            const pId = delBtn.getAttribute('data-id');
+            const packageName = delBtn.getAttribute('data-name');
+            console.log('📝 Package ID:', pId, 'Name:', packageName);
+            
+            // Custom confirmation with package name
+            const confirmMsg = `Are you sure you want to delete "${packageName}"?\n\nThis action cannot be undone and will remove all associated data.`;
+            
+            if (confirm(confirmMsg)) {
+                console.log('✅ User confirmed deletion');
+                // Disable button and show loading state
+                delBtn.disabled = true;
+                const originalHtml = delBtn.innerHTML;
+                delBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                deletePackage(pId, packageName).finally(() => {
+                    delBtn.disabled = false;
+                    delBtn.innerHTML = originalHtml;
+                });
+            } else {
+                console.log('❌ User cancelled deletion');
             }
         });
 
-        async function deletePackage(pId) {
+        async function deletePackage(pId, packageName) {
             try {
-                const res = await fetch(`/admin/packages/${pId}`, {
+                const url = `{{ url('admin/packages') }}/${pId}`;
+                console.log('📡 Deleting package at:', url);
+                
+                const res = await fetch(url, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
 
-                const json = await res.json();
+                const json = await res.json().catch(() => ({}));
 
                 if (!res.ok) {
-                    showToast(json.message || 'Failed to delete package', 'danger');
+                    showToast(json.message || `Failed to delete package (${res.status})`, 'danger');
                     return;
                 }
 
                 if (json.success) {
-                    showToast(json.message || 'Package deleted successfully!', 'success');
-                    document.getElementById(`package-row-${pId}`)?.remove();
+                    showToast(json.message || `Package "${packageName}" deleted successfully!`, 'success');
                     
-                    // Update package count
-                    const totalPackages = document.querySelectorAll('tbody tr:not([style*="display: none"])').length;
-                    document.querySelector('.card-footer div').textContent = 
-                        `Showing ${totalPackages} of ${totalPackages} packages`;
+                    // Animate row removal
+                    const row = document.getElementById(`package-row-${pId}`);
+                    if (row) {
+                        row.style.transition = 'opacity 0.3s ease-out';
+                        row.style.opacity = '0';
+                        setTimeout(() => {
+                            row.remove();
+                            updatePackageCount();
+                        }, 300);
+                    }
+                } else {
+                    showToast(json.message || 'Failed to delete package', 'danger');
                 }
             } catch (err) {
-                console.error('Error:', err);
-                showToast('Failed to delete package', 'danger');
+                console.error('Error deleting package:', err);
+                showToast('Network error: Failed to delete package', 'danger');
+            }
+        }
+
+        // Helper function to update package count
+        function updatePackageCount() {
+            const visibleRows = document.querySelectorAll('tbody tr:not([style*="display: none"])').length;
+            const footerDiv = document.querySelector('.card-footer div');
+            if (footerDiv) {
+                footerDiv.textContent = `Showing ${visibleRows} of ${visibleRows} packages`;
+            }
+            
+            // Show empty state if no packages
+            if (visibleRows === 0) {
+                const tbody = document.querySelector('tbody');
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No packages found.</td></tr>';
             }
         }
 
@@ -651,6 +730,10 @@
 
         // Initialize filter
         filterPackages('all');
+        
+        console.log('✅ Package management initialized successfully');
+        console.log('📊 Edit buttons found:', document.querySelectorAll('.edit-package').length);
+        console.log('📊 Delete buttons found:', document.querySelectorAll('.delete-package').length);
 
     })();
 </script>

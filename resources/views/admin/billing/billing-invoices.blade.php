@@ -8,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="h3 mb-0 page-title">
-                <i class="fas fa-file-invoice me-2 text-primary"></i>Billing & Invoices
+                <i class="fas fa-file-invoice me-2 text-primary"></i>All Invoices
             </h2>
             <p class="text-muted mb-0">Dynamic monthly billing summaries based on customer packages and payments</p>
         </div>
@@ -546,30 +546,39 @@
     }
 
     .badge-paid {
-        background-color: var(--success);
-        color: white;
+        background-color: #06d6a0 !important;
+        color: white !important;
         padding: 6px 12px;
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .badge-pending {
-        background-color: var(--warning);
-        color: black;
+        background-color: #ffd166 !important;
+        color: #000 !important;
         padding: 6px 12px;
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .badge-overdue {
-        background-color: var(--danger);
-        color: white;
+        background-color: #ef476f !important;
+        color: white !important;
         padding: 6px 12px;
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .monthly-bill-btn {

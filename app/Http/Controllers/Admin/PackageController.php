@@ -4,37 +4,65 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Package;
+use App\Models\PackageType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PackageController extends Controller
 {
     public function index()
     {
-        $packages = Package::all();
+        $packages = Package::with('type')
+            ->orderBy('created_at', 'desc') // Latest packages first
+            ->orderBy('p_id', 'desc') // Then by ID descending
+            ->get();
+        $packageTypes = PackageType::all();
         $stats = $this->getPackageStats();
-        
-        return view('admin.packages.index', compact('packages', 'stats'));
+
+        return view('admin.packages.index', compact('packages', 'stats', 'packageTypes'));
+    }
+
+    public function create()
+    {
+        $packageTypes = PackageType::all();
+        return view('admin.packages.create', compact('packageTypes'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        Log::info('Package creation request received', [
+            'method' => $request->method(),
+            'url' => $request->url(),
+            'all_data' => $request->all(),
+            'content_type' => $request->header('Content-Type'),
+            'accept' => $request->header('Accept'),
+            'x_requested_with' => $request->header('X-Requested-With'),
+        ]);
+        
+        $validatedData = $request->validate([
             'name' => 'required|string|max:120',
-            'package_type' => 'required|string|max:50',
+            'package_type_id' => 'required|exists:package_types,id',
             'description' => 'required|string',
             'monthly_price' => 'required|numeric|min:0',
         ]);
+        
+        Log::info('Package validation passed', $validatedData);
 
         try {
-            $package = Package::create([
-                'name' => $request->name,
-                'package_type' => $request->package_type,
-                'description' => $request->description,
-                'monthly_price' => $request->monthly_price,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            // Remove created_at and updated_at from the data since Laravel handles them automatically
+            $packageData = [
+                'name' => $validatedData['name'],
+                'package_type_id' => $validatedData['package_type_id'],
+                'description' => $validatedData['description'],
+                'monthly_price' => $validatedData['monthly_price'],
+            ];
+            
+            Log::info('Creating package with data', $packageData);
+            
+            $package = Package::create($packageData);
+            
+            Log::info('Package created successfully', ['package_id' => $package->p_id]);
 
             return response()->json([
                 'success' => true,
@@ -42,6 +70,11 @@ class PackageController extends Controller
                 'package' => $package
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to create package: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create package: ' . $e->getMessage()
@@ -51,29 +84,72 @@ class PackageController extends Controller
 
     public function show($id)
     {
-        $package = Package::where('p_id', $id)->firstOrFail();
-        return response()->json($package);
+        Log::info('=== SHOW METHOD CALLED ===', [
+            'id' => $id,
+            'type' => gettype($id),
+            'request_url' => request()->url(),
+            'request_method' => request()->method()
+        ]);
+        
+        try {
+            Log::info('Fetching package', ['id' => $id]);
+            
+            $package = Package::with('type')->where('p_id', $id)->firstOrFail();
+            
+            Log::info('Package found', ['package' => $package->toArray()]);
+            
+            return response()->json($package);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch package', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Package not found: ' . $e->getMessage()
+            ], 404);
+        }
     }
 
     public function update(Request $request, $id)
     {
-        $request->validate([
+        Log::info('Package update request received', [
+            'method' => $request->method(),
+            'url' => $request->url(),
+            'package_id' => $id,
+            'all_data' => $request->all(),
+            'content_type' => $request->header('Content-Type'),
+            'accept' => $request->header('Accept'),
+            'x_requested_with' => $request->header('X-Requested-With'),
+        ]);
+        
+        $validatedData = $request->validate([
             'name' => 'required|string|max:120',
-            'package_type' => 'required|string|max:50',
+            'package_type_id' => 'required|exists:package_types,id',
             'description' => 'required|string',
             'monthly_price' => 'required|numeric|min:0',
         ]);
+        
+        Log::info('Package update validation passed', $validatedData);
 
         try {
             $package = Package::where('p_id', $id)->firstOrFail();
             
-            $package->update([
-                'name' => $request->name,
-                'package_type' => $request->package_type,
-                'description' => $request->description,
-                'monthly_price' => $request->monthly_price,
-                'updated_at' => now(),
-            ]);
+            // Remove updated_at from the data since Laravel handles it automatically
+            $packageData = [
+                'name' => $validatedData['name'],
+                'package_type_id' => $validatedData['package_type_id'],
+                'description' => $validatedData['description'],
+                'monthly_price' => $validatedData['monthly_price'],
+            ];
+            
+            Log::info('Updating package with data', $packageData);
+            
+            $package->update($packageData);
+            
+            Log::info('Package updated successfully', ['package_id' => $package->p_id]);
 
             return response()->json([
                 'success' => true,
@@ -81,6 +157,11 @@ class PackageController extends Controller
                 'package' => $package
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to update package: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update package: ' . $e->getMessage()
@@ -91,14 +172,15 @@ class PackageController extends Controller
     public function destroy($id)
     {
         try {
-            $package = Package::where('p_id', $id)->firstOrFail();
+            Log::info('Deleting package', ['id' => $id]);
             
-            // Check if package is assigned to any customers before deletion
+            $package = Package::where('p_id', $id)->firstOrFail();
+
             $assignedCount = DB::table('customer_to_packages')
                 ->where('p_id', $id)
                 ->where('status', 'active')
                 ->count();
-                
+
             if ($assignedCount > 0) {
                 return response()->json([
                     'success' => false,
@@ -107,12 +189,19 @@ class PackageController extends Controller
             }
 
             $package->delete();
+            
+            Log::info('Package deleted successfully', ['id' => $id]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Package deleted successfully!'
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to delete package', [
+                'id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete package: ' . $e->getMessage()
@@ -126,28 +215,10 @@ class PackageController extends Controller
             ->where('status', 'active')
             ->count();
 
-        $regularPriceRange = Package::where('package_type', 'regular')
-            ->selectRaw('COALESCE(MIN(monthly_price), 0) as min_price, COALESCE(MAX(monthly_price), 0) as max_price')
-            ->first();
-
-        $specialPriceRange = Package::where('package_type', 'special')
-            ->selectRaw('COALESCE(MIN(monthly_price), 0) as min_price, COALESCE(MAX(monthly_price), 0) as max_price')
-            ->first();
-
         return [
             'total_packages' => Package::count(),
-            'regular_packages' => Package::where('package_type', 'regular')->count(),
-            'special_packages' => Package::where('package_type', 'special')->count(),
             'active_customers' => $totalCustomers,
             'average_price' => Package::avg('monthly_price') ?? 0,
-            'price_range_regular' => [
-                'min' => $regularPriceRange->min_price ?? 0,
-                'max' => $regularPriceRange->max_price ?? 0
-            ],
-            'price_range_special' => [
-                'min' => $specialPriceRange->min_price ?? 0,
-                'max' => $specialPriceRange->max_price ?? 0
-            ],
             'most_popular_package' => $this->getMostPopularPackage()
         ];
     }
@@ -163,5 +234,109 @@ class PackageController extends Controller
             ->first();
 
         return $popularPackage ?: null;
+    }
+
+    // -------------------------
+    // Package Type Management
+    // -------------------------
+
+    // Update your package type methods in PackageController
+    public function packageTypes()
+    {
+        $packageTypes = PackageType::withCount('packages')->orderBy('name')->get();
+        
+        // Calculate package counts for each type
+        $packageCounts = [];
+        foreach ($packageTypes as $type) {
+            $packageCounts[$type->name] = $type->packages_count;
+        }
+
+        return view('admin.packages.types', compact('packageTypes', 'packageCounts'));
+    }
+
+    public function addPackageType(Request $request)
+    {
+        // Debug the incoming request
+        Log::info('Add Package Type Request:', [
+            'method' => $request->method(),
+            'url' => $request->url(),
+            'all_data' => $request->all(),
+            'content_type' => $request->header('Content-Type'),
+            'accept' => $request->header('Accept'),
+            'x_requested_with' => $request->header('X-Requested-With'),
+        ]);
+        
+        try {
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:50|unique:package_types,name',
+            ]);
+            
+            Log::info('Package type validation passed', $validatedData);
+
+            Log::info('Creating package type: ' . $validatedData['name']);
+            
+            $type = PackageType::create([
+                'name' => $validatedData['name'],
+            ]);
+
+            Log::info('Package type created successfully: ' . $type->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Package type added successfully!',
+                'type' => $type
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Package type validation failed: ' . $e->getMessage(), [
+                'errors' => $e->errors(),
+                'input' => $request->all(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Failed to create package type: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+                'input' => $request->all(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add package type: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deletePackageType($id)
+    {
+        try {
+            $type = PackageType::findOrFail($id);
+
+            // Check if this is a protected type
+            if (in_array($type->name, ['regular', 'special'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete protected package types (regular, special).'
+                ], 400);
+            }
+
+            // Delete packages belonging to this type
+            $type->packages()->delete();
+            $type->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Package type and associated packages deleted successfully!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete package type: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

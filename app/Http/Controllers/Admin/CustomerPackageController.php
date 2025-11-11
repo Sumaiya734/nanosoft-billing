@@ -23,7 +23,7 @@ class CustomerPackageController extends Controller
 
             // Build query with search and filters - FIXED: Use customerPackages instead of activeCustomerPackages
             $customersQuery = Customer::with(['customerPackages.package' => function($query) {
-                    $query->orderBy('package_type', 'desc');
+                    $query->orderBy('package_type_id', 'desc');
                 }])
                 ->whereHas('customerPackages', function($query) use ($search, $status, $packageType) {
                     if ($status) {
@@ -31,7 +31,7 @@ class CustomerPackageController extends Controller
                     }
                     if ($packageType) {
                         $query->whereHas('package', function($q) use ($packageType) {
-                            $q->where('package_type', $packageType);
+                            $q->where('package_type_id', $packageType);
                         });
                     }
                 });
@@ -83,9 +83,7 @@ class CustomerPackageController extends Controller
                 ->orderBy('name')
                 ->get(['c_id', 'name', 'phone', 'email', 'customer_id', 'address']);
             
-            $packages = Package::orderBy('package_type')
-                ->orderBy('monthly_price')
-                ->get(['p_id', 'name', 'monthly_price', 'package_type']);
+            $packages = Package::orderBy('package_type_id')->orderBy('monthly_price')->get();
             
             return view('admin.customer-to-packages.assign', compact('customers', 'packages'));
 
@@ -222,12 +220,12 @@ public function checkExistingPackage(Request $request)
             if ($existingPackage->is_active && $existingPackage->status === 'active') {
                 return response()->json([
                     'exists' => true,
-                    'message' => `This customer already has the "${$packageName}" package actively assigned. Please choose a different package.`
+                    'message' => 'This customer already has the "' . $packageName . '" package actively assigned. Please choose a different package.'
                 ]);
             } else {
                 return response()->json([
                     'exists' => true,
-                    'message' => `This customer previously had the "${$packageName}" package. Please choose a different package.`
+                    'message' => 'This customer previously had the "' . $packageName . '" package. Please choose a different package.'
                 ]);
             }
         }
@@ -257,7 +255,7 @@ public function checkExistingPackage(Request $request)
                     ->with('error', 'Package assignment not found.');
             }
 
-            $packages = Package::orderBy('package_type')->orderBy('monthly_price')->get();
+            $packages = Package::orderBy('package_type_id')->orderBy('monthly_price')->get();
             
             return view('admin.customer-to-packages.edit', [
                 'customerPackage' => $customerPackage,
