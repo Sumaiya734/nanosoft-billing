@@ -6,8 +6,8 @@ use App\Models\Customer;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BillingController;
-use App\Http\Controllers\Admin\PackageController;
-use App\Http\Controllers\Admin\CustomerPackageController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CustomerProductController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Admin\MonthlyBillController;
 use App\Http\Controllers\Admin\PaymentController;
@@ -16,6 +16,11 @@ use App\Http\Controllers\Admin\PaymentController;
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
+
+// Add a general login route that redirects to admin login
+Route::get('/login', function () {
+    return redirect()->route('admin.login');
+})->name('login');
 
 // Customer Authentication Routes
 Route::get('/customer/login', [CustomerController::class, 'showLoginForm'])->name('customer.login');
@@ -34,29 +39,29 @@ Route::prefix('admin')->middleware(['web', 'auth'])->name('admin.')->group(funct
     Route::get('/dashboard/refresh', [DashboardController::class, 'refreshData'])->name('dashboard.refresh');
     
    
-    // ✅ FIXED: Package Management Routes
-    Route::prefix('packages')->name('packages.')->group(function () {
-        Route::get('/', [PackageController::class, 'index'])->name('index');
-        Route::get('/create', [PackageController::class, 'create'])->name('create');
-        Route::get('/types', [PackageController::class, 'packageTypes'])->name('types');
+    // ✅ FIXED: Product Management Routes
+    Route::prefix('products')->name('products.')->group(function () {
+        Route::get('/', [ProductController::class, 'index'])->name('index');
+        Route::get('/create', [ProductController::class, 'create'])->name('create');
+        Route::get('/types', [ProductController::class, 'productTypes'])->name('types');
         Route::get('/test', function () {
-            return view('admin.packages.test');
+            return view('admin.products.test');
         })->name('test');
         Route::get('/debug/{id}', function ($id) {
-            $package = \App\Models\Package::where('p_id', $id)->first();
+            $product = \App\Models\Product::where('p_id', $id)->first();
             return response()->json([
-                'found' => $package ? true : false,
-                'package' => $package,
-                'all_packages' => \App\Models\Package::select('p_id', 'name')->get()
+                'found' => $product ? true : false,
+                'product' => $product,
+                'all_products' => \App\Models\Product::select('p_id', 'name')->get()
             ]);
         })->name('debug');
-        Route::post('/', [PackageController::class, 'store'])->name('store');
-        Route::post('/add-type', [PackageController::class, 'addPackageType'])->name('add-type');
-        Route::delete('/delete-type/{id}', [PackageController::class, 'deletePackageType'])->name('delete-type');
-        Route::get('/{id}', [PackageController::class, 'show'])->name('show');
-        Route::put('/{id}', [PackageController::class, 'update'])->name('update');
-        Route::delete('/{id}', [PackageController::class, 'destroy'])->name('destroy');
-        Route::post('/{id}/toggle-status', [PackageController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/', [ProductController::class, 'store'])->name('store');
+        Route::post('/add-type', [ProductController::class, 'addProductType'])->name('add-type');
+        Route::delete('/delete-type/{id}', [ProductController::class, 'deleteProductType'])->name('delete-type');
+        Route::get('/{id}', [ProductController::class, 'show'])->name('show');
+        Route::put('/{id}', [ProductController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Customer Management
@@ -67,22 +72,22 @@ Route::prefix('admin')->middleware(['web', 'auth'])->name('admin.')->group(funct
     Route::get('/customers/{customer}/billing-history', [CustomerController::class, 'billingHistory'])->name('customers.billing-history');
     Route::get('/customers/{customer}/profile', [CustomerController::class, 'profile'])->name('customers.profile');
     
-    // Customer search route for package assignment
-    Route::get('/customers/search', [CustomerPackageController::class, 'searchCustomers'])->name('customers.search');
+    // Customer search route for product assignment
+    Route::get('/customers/search', [CustomerProductController::class, 'searchCustomers'])->name('customers.search');
 
     // Add export route
     Route::get('/customers/export', [CustomerController::class, 'export'])->name('customers.export');
 
-    // Customer Packages Management
-    Route::get('/customer-to-packages', [CustomerPackageController::class, 'index'])->name('customer-to-packages.index');
-    Route::get('/customer-to-packages/check-existing', [CustomerPackageController::class, 'checkExistingPackage'])->name('customer-to-packages.check-existing');
-    Route::get('/customer-to-packages/assign', [CustomerPackageController::class, 'assign'])->name('customer-to-packages.assign');
-    Route::post('/customer-to-packages/store', [CustomerPackageController::class, 'store'])->name('customer-to-packages.store'); 
-    Route::get('/customer-to-packages/{id}/edit', [CustomerPackageController::class, 'edit'])->name('customer-to-packages.edit');
-    Route::put('/customer-to-packages/{id}', [CustomerPackageController::class, 'update'])->name('customer-to-packages.update');
-    Route::delete('/customer-to-packages/{id}', [CustomerPackageController::class, 'destroy'])->name('customer-to-packages.destroy');
-    Route::post('/customer-to-packages/{id}/renew', [CustomerPackageController::class, 'renew'])->name('customer-to-packages.renew');
-    Route::post('/customer-to-packages/{id}/toggle-status', [CustomerPackageController::class, 'toggleStatus'])->name('customer-to-packages.toggle-status');
+    // Customer Products Management
+    Route::get('/customer-to-products', [CustomerProductController::class, 'index'])->name('customer-to-products.index');
+    Route::get('/customer-to-products/check-existing', [CustomerProductController::class, 'checkExistingProduct'])->name('customer-to-products.check-existing');
+    Route::get('/customer-to-products/assign', [CustomerProductController::class, 'assign'])->name('customer-to-products.assign');
+    Route::post('/customer-to-products/store', [CustomerProductController::class, 'store'])->name('customer-to-products.store'); 
+    Route::get('/customer-to-products/{id}/edit', [CustomerProductController::class, 'edit'])->name('customer-to-products.edit');
+    Route::put('/customer-to-products/{id}', [CustomerProductController::class, 'update'])->name('customer-to-products.update');
+    Route::delete('/customer-to-products/{id}', [CustomerProductController::class, 'destroy'])->name('customer-to-products.destroy');
+    Route::post('/customer-to-products/{id}/renew', [CustomerProductController::class, 'renew'])->name('customer-to-products.renew');
+    Route::post('/customer-to-products/{id}/toggle-status', [CustomerProductController::class, 'toggleStatus'])->name('customer-to-products.toggle-status');
     
     // Billing Routes - CLEANED UP AND FIXED
     Route::prefix('billing')->name('billing.')->group(function () {
@@ -246,21 +251,20 @@ Route::get('/debug/routes', function () {
     }
 });
 
-// Debug route for customer packages
-Route::get('/debug/customer-to-packages-routes', function() {
-    echo "<h3>Customer Packages Routes:</h3>";
+Route::get('/debug/customer-to-products-routes', function() {
+    echo "<h3>Customer Products Routes:</h3>";
     try {
-        echo "admin.customer-to-packages.index: " . route('admin.customer-to-packages.index') . "<br>";
+        echo "admin.customer-to-products.index: " . route('admin.customer-to-products.index') . "<br>";
         echo "✅ Route exists!<br>";
     } catch (Exception $e) {
-        echo "❌ admin.customer-to-packages.index: " . $e->getMessage() . "<br>";
+        echo "❌ admin.customer-to-products.index: " . $e->getMessage() . "<br>";
     }
     
     try {
-        echo "admin.customer-to-packages.assign: " . route('admin.customer-to-packages.assign') . "<br>";
+        echo "admin.customer-to-products.assign: " . route('admin.customer-to-products.assign') . "<br>";
         echo "✅ Route exists!<br>";
     } catch (Exception $e) {
-        echo "❌ admin.customer-to-packages.assign: " . $e->getMessage() . "<br>";
+        echo "❌ admin.customer-to-products.assign: " . $e->getMessage() . "<br>";
     }
 });
 

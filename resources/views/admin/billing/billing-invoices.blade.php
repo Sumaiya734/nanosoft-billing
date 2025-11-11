@@ -10,7 +10,7 @@
             <h2 class="h3 mb-0 page-title">
                 <i class="fas fa-file-invoice me-2 text-primary"></i>All Invoices
             </h2>
-            <p class="text-muted mb-0">Dynamic monthly billing summaries based on customer packages and payments</p>
+            <p class="text-muted mb-0">Dynamic monthly billing summaries based on customer products and payments</p>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary" onclick="exportBillingReport()">
@@ -439,7 +439,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Generate from Invoices & Packages</h5>
+                <h5 class="modal-title">Generate from Invoices & products</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ route('admin.billing.generate-from-invoices') }}" method="POST">
@@ -447,7 +447,7 @@
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        This will automatically generate a billing summary from customer packages and payment records for the selected month.
+                        This will automatically generate a billing summary from customer products and payment records for the selected month.
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Select Month *</label>

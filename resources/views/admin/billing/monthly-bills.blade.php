@@ -119,7 +119,7 @@
                         <tr>
                             <th>Invoice ID</th>
                             <th>Customer Info</th>
-                            <th>Packages</th>
+                            <th>products</th>
                             <th>Bill Amount</th>
                             <th>Previous Due</th>
                             <th>Total Amount</th>
@@ -152,25 +152,25 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="packages-list">
+                                <div class="products-list">
                                     @php
-                                        $customerPackages = $invoice->customer->customerPackages ?? collect();
+                                        $customerproducts = $invoice->customer->customerproducts ?? collect();
                                     @endphp
-                                    @if($customerPackages->count() > 0)
-                                        @foreach($customerPackages as $customerPackage)
-                                            @if($customerPackage->package)
-                                            <div class="package-item mb-2">
-                                                <div class="fw-medium text-dark">{{ $customerPackage->package->name ?? 'Unknown Package' }}</div>
+                                    @if($customerproducts->count() > 0)
+                                        @foreach($customerproducts as $customerproduct)
+                                            @if($customerproduct->product)
+                                            <div class="product-item mb-2">
+                                                <div class="fw-medium text-dark">{{ $customerproduct->product->name ?? 'Unknown product' }}</div>
                                                 <div class="text-muted small">
-                                                    ৳ {{ number_format($customerPackage->package->monthly_price ?? 0, 2) }}/month
-                                                    @if($customerPackage->billing_cycle_months > 1)
-                                                    <span class="badge bg-info">({{ $customerPackage->billing_cycle_months }} months)</span>
+                                                    ৳ {{ number_format($customerproduct->product->monthly_price ?? 0, 2) }}/month
+                                                    @if($customerproduct->billing_cycle_months > 1)
+                                                    <span class="badge bg-info">({{ $customerproduct->billing_cycle_months }} months)</span>
                                                     @endif
                                                     <div class="mt-1">
                                                         <small class="text-muted">
                                                             Status: 
-                                                            <span class="badge bg-{{ $customerPackage->status == 'active' ? 'success' : 'warning' }}">
-                                                                {{ $customerPackage->status }}
+                                                            <span class="badge bg-{{ $customerproduct->status == 'active' ? 'success' : 'warning' }}">
+                                                                {{ $customerproduct->status }}
                                                             </span>
                                                         </small>
                                                     </div>
@@ -179,7 +179,7 @@
                                             @endif
                                         @endforeach
                                     @else
-                                        <span class="text-muted">No packages assigned</span>
+                                        <span class="text-muted">No products assigned</span>
                                     @endif
                                 </div>
                             </td>
@@ -275,8 +275,8 @@
                                                 data-invoice-id="{{ $invoice->invoice_id }}"
                                                 data-invoice-number="{{ $invoice->invoice_number }}"
                                                 data-customer-name="{{ e($invoice->customer->name ?? 'Customer') }}"
-                                                data-customer-email="{{ e($invoice->customer->email ?? '') }}"
-                                                data-customer-phone="{{ e($invoice->customer->phone ?? '') }}"
+                                                data-customer-email="{{ e($invoice->customer->email ?? 'N/A') }}"
+                                                data-customer-phone="{{ e($invoice->customer->phone ?? 'N/A') }}"
                                                 data-total-amount="{{ $invoice->total_amount ?? 0 }}"
                                                 data-due-amount="{{ $invoice->next_due ?? 0 }}"
                                                 data-received-amount="{{ $invoice->received_amount ?? 0 }}"
@@ -297,7 +297,7 @@
                                                 data-bs-target="#sendReminderModal"
                                                 data-invoice-id="{{ $invoice->invoice_id }}"
                                                 data-customer-name="{{ e($invoice->customer->name ?? 'Customer') }}"
-                                                data-customer-email="{{ e($invoice->customer->email ?? '') }}"
+                                                data-customer-email="{{ e($invoice->customer->email ?? 'N/A') }}"
                                                 title="Send Payment Reminder">
                                             <i class="fas fa-bell"></i> Reminder
                                         </button>
@@ -358,14 +358,14 @@
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        This will generate bills for all active customers with packages in {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}
+                        This will generate bills for all active customers with products in {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Billing Month</label>
                         <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}" readonly>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Active Customers with Packages</label>
+                        <label class="form-label">Active Customers with products</label>
                         <input type="text" class="form-control" value="{{ $totalCustomers ?? 0 }} customers" readonly>
                     </div>
                     <div class="mb-3">
@@ -533,7 +533,7 @@
         font-weight: 500;
     }
 
-    .packages-list .package-item {
+    .products-list .product-item {
         padding: 8px;
         border-left: 3px solid var(--primary);
         background-color: #f8f9fa;
@@ -541,7 +541,7 @@
         margin-bottom: 8px;
     }
 
-    .packages-list .package-item:last-child {
+    .products-list .product-item:last-child {
         margin-bottom: 0;
     }
 

@@ -117,22 +117,20 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Payment Date *</label>
                                 <input type="date" name="payment_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                             </div>
                         </div>
-                        
+                    </div>
+
+                    <div class="row g-3">
                         <div class="col-12 col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Transaction ID</label>
-                                <input type="text" name="transaction_id" class="form-control" placeholder="Optional transaction ID">
-                            </div>
+                            
                         </div>
+                        
+                        
                     </div>
 
                     <div class="mb-3">

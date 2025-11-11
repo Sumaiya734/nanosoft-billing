@@ -77,9 +77,9 @@
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h5 class="card-title">Active Packages</h5>
-                                            <h2 class="mb-0">{{ $activePackages ?? 0 }}</h2>
-                                            <small>Total packages</small>
+                                            <h5 class="card-title">Active products</h5>
+                                            <h2 class="mb-0">{{ $activeproducts ?? 0 }}</h2>
+                                            <small>Total products</small>
                                         </div>
                                         <div class="display-4">
                                             <i class="fas fa-cube"></i>

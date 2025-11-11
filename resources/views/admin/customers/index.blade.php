@@ -10,14 +10,14 @@
             <h2 class="h3 mb-1 text-dark">
                 <i class="fas fa-users me-2 text-primary"></i>Customer Management
             </h2>
-            <p class="text-muted mb-0">Manage all customer accounts, packages, and billing information</p>
+            <p class="text-muted mb-0">Manage all customer accounts, products, and billing information</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('admin.customers.create') }}" class="btn btn-primary">
                 <i class="fas fa-user-plus me-2"></i>Add Customer
             </a>
-            <a href="{{ route('admin.customer-to-packages.assign') }}" class="btn btn-success">
-                <i class="fas fa-user-tag me-2"></i>Assign Package
+            <a href="{{ route('admin.customer-to-products.assign') }}" class="btn btn-success">
+                <i class="fas fa-user-tag me-2"></i>Assign product
             </a>
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -230,7 +230,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-4">Customer</th>
-                                <th>Packages</th>
+                                <th>products</th>
                                 <th class="text-center">Monthly Bill</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Registration</th>
@@ -241,18 +241,18 @@
                             @foreach($customers as $customer)
                             @php
                                 // Use Eloquent relationships for clean data access
-                                $activePackages = $customer->customerPackages()
-                                    ->with('package')
+                                $activeproducts = $customer->customerproducts()
+                                    ->with('product')
                                     ->where('status', 'active')
                                     ->where('is_active', 1)
                                     ->get();
 
-                                $regularPackage = $activePackages->firstWhere('package.package_type', 'regular');
-                                $specialPackages = $activePackages->where('package.package_type', 'special');
+                                $regularproduct = $activeproducts->firstWhere('product.product_type', 'regular');
+                                $specialproducts = $activeproducts->where('product.product_type', 'special');
                                 
-                                $hasRegularPackage = (bool) $regularPackage;
-                                $hasSpecialPackages = $specialPackages->count() > 0;
-                                $monthlyTotal = $activePackages->sum('package_price');
+                                $hasRegularproduct = (bool) $regularproduct;
+                                $hasSpecialproducts = $specialproducts->count() > 0;
+                                $monthlyTotal = $activeproducts->sum('product_price');
                                 
                                 // Check for due payments
                                 $hasDue = $customer->invoices()
@@ -277,7 +277,7 @@
                             <tr class="{{ $rowClass }}" 
                                 data-customer-id="{{ $customer->c_id }}" 
                                 data-status="{{ $customer->is_active ? 'active' : 'inactive' }}" 
-                                data-has-addons="{{ $hasSpecialPackages ? 'yes' : 'no' }}"
+                                data-has-addons="{{ $hasSpecialproducts ? 'yes' : 'no' }}"
                                 data-has-due="{{ $hasDue ? 'yes' : 'no' }}"
                                 data-is-new="{{ $isNew ? 'yes' : 'no' }}">
                                 
@@ -319,20 +319,20 @@
                                     </div>
                                 </td>
 
-                                <!-- Packages Column -->
+                                <!-- products Column -->
                                 <td>
-                                    @if($hasRegularPackage)
-                                        <!-- Main Package -->
-                                        <div class="main-package-card mb-2">
+                                    @if($hasRegularproduct)
+                                        <!-- Main product -->
+                                        <div class="main-product-card mb-2">
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div class="d-flex align-items-center">
                                                     <i class="fas fa-wifi text-primary me-2"></i>
                                                     <div>
-                                                        <div class="package-name fw-semibold text-dark">
-                                                            {{ $regularPackage->package->name ?? 'Unknown Package' }}
+                                                        <div class="product-name fw-semibold text-dark">
+                                                            {{ $regularproduct->product->name ?? 'Unknown product' }}
                                                         </div>
-                                                        <div class="package-price text-success small">
-                                                            ৳{{ number_format($regularPackage->package_price, 2) }}/month
+                                                        <div class="product-price text-success small">
+                                                            ৳{{ number_format($regularproduct->product_price, 2) }}/month
                                                         </div>
                                                     </div>
                                                 </div>
@@ -340,21 +340,21 @@
                                             </div>
                                         </div>
 
-                                        <!-- Add-on Packages -->
-                                        @if($hasSpecialPackages)
+                                        <!-- Add-on products -->
+                                        @if($hasSpecialproducts)
                                             <div class="addons-section">
                                                 <div class="addons-header small text-muted mb-1">
-                                                    <i class="fas fa-bolt me-1"></i>Add-ons ({{ $specialPackages->count() }})
+                                                    <i class="fas fa-bolt me-1"></i>Add-ons ({{ $specialproducts->count() }})
                                                 </div>
                                                 <div class="addons-list">
-                                                    @foreach($specialPackages as $specialPackage)
+                                                    @foreach($specialproducts as $specialproduct)
                                                     <div class="addon-item">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <span class="addon-name small">
-                                                                {{ $specialPackage->package->name ?? 'Unknown Add-on' }}
+                                                                {{ $specialproduct->product->name ?? 'Unknown Add-on' }}
                                                             </span>
                                                             <span class="addon-price text-warning small fw-semibold">
-                                                                +৳{{ number_format($specialPackage->package_price, 2) }}
+                                                                +৳{{ number_format($specialproduct->product_price, 2) }}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -363,11 +363,11 @@
                                             </div>
                                         @endif
                                     @else
-                                        <div class="no-package text-center py-2">
+                                        <div class="no-product text-center py-2">
                                             <i class="fas fa-exclamation-triangle text-warning fa-lg mb-2"></i>
-                                            <div class="text-muted small">No Active Package</div>
-                                            <a href="{{ route('admin.customer-to-packages.assign') }}" class="btn btn-sm btn-outline-primary mt-1">
-                                                Assign Package
+                                            <div class="text-muted small">No Active product</div>
+                                            <a href="{{ route('admin.customer-to-products.assign') }}" class="btn btn-sm btn-outline-primary mt-1">
+                                                Assign product
                                             </a>
                                         </div>
                                     @endif
@@ -539,7 +539,7 @@
                 </div>
                 <p class="mt-3 mb-0">
                     Are you sure you want to delete <strong id="deleteCustomerName" class="text-danger"></strong>?
-                    All associated invoices, payments, and package assignments will be permanently removed.
+                    All associated invoices, payments, and product assignments will be permanently removed.
                 </p>
             </div>
             <div class="modal-footer border-top-0">
@@ -592,20 +592,20 @@
     position: relative;
 }
 
-/* Package Card Styling */
-.main-package-card {
+/* product Card Styling */
+.main-product-card {
     background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
     border: 1px solid #e3e8ff;
     border-radius: 8px;
     padding: 0.75rem;
 }
 
-.package-name {
+.product-name {
     font-size: 0.875rem;
     line-height: 1.3;
 }
 
-.package-price {
+.product-price {
     font-size: 0.8rem;
     font-weight: 500;
 }

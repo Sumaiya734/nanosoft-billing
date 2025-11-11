@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Customer;
-use App\Models\Package;
+use App\Models\product;
 use App\Models\Payment;
-use App\Models\CustomerPackage;
+use App\Models\Customerproduct;
 use App\Models\MonthlyBillingSummary;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -23,7 +23,7 @@ class BillingController extends Controller
     public function allInvoices()
     {
         try {
-            $invoices = Invoice::with(['customer', 'invoicePackages'])
+            $invoices = Invoice::with(['customer', 'invoiceproducts'])
                 ->orderBy('issue_date', 'desc')
                 ->paginate(20);
 
@@ -52,20 +52,20 @@ class BillingController extends Controller
     public function generateBill($id)
     {
         try {
-            $customer = Customer::with(['activePackages'])->findOrFail($id);
+            $customer = Customer::with(['activeproducts'])->findOrFail($id);
             
-            $regularPackages = Package::whereHas('type', function($query) {
+            $regularproducts = product::whereHas('type', function($query) {
                 $query->where('name', 'regular');
             })->get();
             
-            $specialPackages = Package::whereHas('type', function($query) {
+            $specialproducts = product::whereHas('type', function($query) {
                 $query->where('name', 'special');
             })->get();
 
             return view('admin.billing.generate-bill', compact(
                 'customer', 
-                'regularPackages', 
-                'specialPackages'
+                'regularproducts', 
+                'specialproducts'
             ));
 
         } catch (\Exception $e) {
@@ -81,8 +81,8 @@ class BillingController extends Controller
     {
         $request->validate([
             'billing_month' => 'required|date',
-            'regular_packages' => 'required|array',
-            'special_packages' => 'array',
+            'regular_products' => 'required|array',
+            'special_products' => 'array',
             'discount' => 'numeric|min:0|max:100',
             'notes' => 'nullable|string'
         ]);
@@ -90,12 +90,12 @@ class BillingController extends Controller
         try {
             $customer = Customer::findOrFail($customerId);
 
-            $regularPackageAmount = $this->calculatePackageAmount($request->regular_packages);
-            $specialPackageAmount = $this->calculatePackageAmount($request->special_packages ?? []);
+            $regularproductAmount = $this->calculateproductAmount($request->regular_products);
+            $specialproductAmount = $this->calculateproductAmount($request->special_products ?? []);
             
             $serviceCharge = 50.00;
             $vatPercentage = 5.00;
-            $subtotal = $regularPackageAmount + $specialPackageAmount + $serviceCharge;
+            $subtotal = $regularproductAmount + $specialproductAmount + $serviceCharge;
             $vatAmount = $subtotal * ($vatPercentage / 100);
             $discountAmount = $subtotal * ($request->discount / 100);
             $totalAmount = $subtotal + $vatAmount - $discountAmount;
@@ -117,8 +117,8 @@ class BillingController extends Controller
                 'created_by' => Auth::id()
             ]);
 
-            // Attach packages to invoice
-            $this->attachPackagesToInvoice($invoice, $request->regular_packages, $request->special_packages);
+            // Attach products to invoice
+            $this->attachproductsToInvoice($invoice, $request->regular_products, $request->special_products);
 
             return redirect()->route('admin.billing.view-bill', $invoice->invoice_id)
                 ->with('success', 'Bill generated successfully for ' . $customer->name);
@@ -130,29 +130,29 @@ class BillingController extends Controller
     }
 
     /**
-     * Helper method to calculate package amount
+     * Helper method to calculate product amount
      */
-    private function calculatePackageAmount($packageIds)
+    private function calculateproductAmount($productIds)
     {
-        return Package::whereIn('p_id', $packageIds)->sum('monthly_price');
+        return product::whereIn('p_id', $productIds)->sum('monthly_price');
     }
 
     /**
-     * Attach packages to invoice
+     * Attach products to invoice
      */
-    private function attachPackagesToInvoice($invoice, $regularPackages, $specialPackages)
+    private function attachproductsToInvoice($invoice, $regularproducts, $specialproducts)
     {
-        $allPackages = array_merge($regularPackages, $specialPackages);
+        $allproducts = array_merge($regularproducts, $specialproducts);
         
-        foreach ($allPackages as $packageId) {
-            $package = Package::find($packageId);
-            if ($package) {
-                DB::table('invoice_packages')->insert([
+        foreach ($allproducts as $productId) {
+            $product = product::find($productId);
+            if ($product) {
+                DB::table('invoice_products')->insert([
                     'invoice_id' => $invoice->invoice_id,
-                    'cp_id' => $this->getCustomerPackageId($invoice->c_id, $packageId),
-                    'package_price' => $package->monthly_price,
+                    'cp_id' => $this->getCustomerproductId($invoice->c_id, $productId),
+                    'product_price' => $product->monthly_price,
                     'billing_cycle_months' => 1,
-                    'total_package_amount' => $package->monthly_price,
+                    'total_product_amount' => $product->monthly_price,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
@@ -161,17 +161,17 @@ class BillingController extends Controller
     }
 
     /**
-     * Get customer package ID
+     * Get customer product ID
      */
-    private function getCustomerPackageId($customerId, $packageId)
+    private function getCustomerproductId($customerId, $productId)
     {
-        $customerPackage = CustomerPackage::where('c_id', $customerId)
-            ->where('p_id', $packageId)
+        $customerproduct = Customerproduct::where('c_id', $customerId)
+            ->where('p_id', $productId)
             ->where('status', 'active')
             ->where('is_active', true)
             ->first();
 
-        return $customerPackage ? $customerPackage->cp_id : null;
+        return $customerproduct ? $customerproduct->cp_id : null;
     }
 
     /**
@@ -180,7 +180,7 @@ class BillingController extends Controller
     public function viewBill($id)
     {
         try {
-            $invoice = Invoice::with(['customer', 'invoicePackages.package', 'payments'])
+            $invoice = Invoice::with(['customer', 'invoiceproducts.product', 'payments'])
                             ->findOrFail($id);
 
             return view('admin.billing.view-bill', compact('invoice'));
@@ -261,15 +261,15 @@ class BillingController extends Controller
                 'invoices' => function($query) {
                     $query->orderBy('issue_date', 'desc')->limit(12);
                 }, 
-                'activePackages.package'
+                'activeproducts.product'
             ])->findOrFail($id);
 
-            // Get customer's active packages
-            $packageNames = $customer->activePackages->pluck('package.name')->toArray();
+            // Get customer's active products
+            $productNames = $customer->activeproducts->pluck('product.name')->toArray();
 
-            // Calculate monthly bill from active packages
-            $monthlyBill = $customer->activePackages->sum(function($customerPackage) {
-                return $customerPackage->package->monthly_price ?? 0;
+            // Calculate monthly bill from active products
+            $monthlyBill = $customer->activeproducts->sum(function($customerproduct) {
+                return $customerproduct->product->monthly_price ?? 0;
             });
 
             // Format billing history
@@ -282,7 +282,7 @@ class BillingController extends Controller
                 ];
             });
 
-            return view('admin.customers.profile', compact('customer', 'packageNames', 'monthlyBill', 'billingHistory'));
+            return view('admin.customers.profile', compact('customer', 'productNames', 'monthlyBill', 'billingHistory'));
 
         } catch (\Exception $e) {
             Log::error('Customer profile error: ' . $e->getMessage());
@@ -298,8 +298,8 @@ class BillingController extends Controller
         try {
             $customer = Customer::findOrFail($c_id);
 
-            $packages = $customer->customerPackages()
-                ->with('package')
+            $products = $customer->customerproducts()
+                ->with('product')
                 ->get();
 
             $invoices = $customer->invoices()
@@ -308,7 +308,7 @@ class BillingController extends Controller
 
             return view('admin.billing.customer-billing-details', compact(
                 'customer',
-                'packages',
+                'products',
                 'invoices'
             ));
         } catch (\Exception $e) {
@@ -473,9 +473,9 @@ class BillingController extends Controller
         $dueCustomers = $this->getDueCustomersForMonth($monthDate);
         
         // Calculate expected revenue from due customers
-        $totalPackageAmount = $dueCustomers->sum('monthly_price');
+        $totalproductAmount = $dueCustomers->sum('monthly_price');
         $serviceCharge = 50 * $dueCustomers->count();
-        $subtotal = $totalPackageAmount + $serviceCharge;
+        $subtotal = $totalproductAmount + $serviceCharge;
         $vatAmount = $subtotal * 0.05;
         $totalAmount = $subtotal + $vatAmount;
 
@@ -534,10 +534,10 @@ class BillingController extends Controller
                 'customers.c_id',
                 'customers.name',
                 'customers.customer_id',
-                'packages.monthly_price'
+                'products.monthly_price'
             )
-            ->join('customer_to_packages as cp', 'customers.c_id', '=', 'cp.c_id')
-            ->join('packages', 'cp.p_id', '=', 'packages.p_id')
+            ->join('customer_to_products as cp', 'customers.c_id', '=', 'cp.c_id')
+            ->join('products', 'cp.p_id', '=', 'products.p_id')
             ->where('cp.status', 'active')
             ->where('cp.is_active', 1)
             ->where('customers.is_active', 1)
@@ -552,7 +552,7 @@ class BillingController extends Controller
                       ->where('cp.assign_date', '<=', $monthEnd);
                 });
             })
-            ->groupBy('customers.c_id', 'customers.name', 'customers.customer_id', 'packages.monthly_price')
+            ->groupBy('customers.c_id', 'customers.name', 'customers.customer_id', 'products.monthly_price')
             ->orderBy('customers.name')
             ->get();
     }
@@ -671,9 +671,9 @@ class BillingController extends Controller
         $serviceCharge = 50.00;
         $vatPercentage = 5.00;
 
-        // Calculate package amount
-        $packageAmount = $customer->monthly_price;
-        $subtotal = $packageAmount + $serviceCharge;
+        // Calculate product amount
+        $productAmount = $customer->monthly_price;
+        $subtotal = $productAmount + $serviceCharge;
         $vatAmount = $subtotal * ($vatPercentage / 100);
         $totalAmount = $subtotal + $vatAmount;
 
@@ -690,7 +690,7 @@ class BillingController extends Controller
             'received_amount' => 0,
             'next_due' => $totalAmount,
             'status' => 'unpaid',
-            'notes' => 'Auto-generated based on package assignment',
+            'notes' => 'Auto-generated based on product assignment',
             'created_by' => Auth::id()
         ]);
 
@@ -760,7 +760,7 @@ class BillingController extends Controller
     }
 
     /**
-     * Generate from invoices and packages
+     * Generate from invoices and products
      */
     public function generateFromInvoices(Request $request)
     {
@@ -786,13 +786,13 @@ class BillingController extends Controller
                 'received_amount' => $monthData['received_amount'],
                 'due_amount' => $monthData['due_amount'],
                 'status' => $monthData['status'],
-                'notes' => 'Generated from customer packages and invoices',
+                'notes' => 'Generated from customer products and invoices',
                 'is_locked' => false,
                 'created_by' => Auth::id()
             ]);
 
             return redirect()->route('admin.billing.billing-invoices')
-                ->with('success', 'Monthly billing summary generated successfully from packages and invoices.');
+                ->with('success', 'Monthly billing summary generated successfully from products and invoices.');
 
         } catch (\Exception $e) {
             Log::error('Generate from invoices error: ' . $e->getMessage());

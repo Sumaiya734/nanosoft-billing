@@ -12,12 +12,12 @@
             color: white;
             padding: 100px 0;
         }
-        .package-card {
+        .product-card {
             transition: transform 0.3s ease;
             border: none;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .package-card:hover {
+        .product-card:hover {
             transform: translateY(-5px);
         }
         .feature-icon {
@@ -36,7 +36,7 @@
             </a>
             
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="#packages">Packages</a>
+                <a class="nav-link" href="#products">products</a>
                 <a class="nav-link" href="#features">Features</a>
                 <a class="nav-link" href="#about">About</a>
                 <a class="nav-link" href="{{ route('customer.login') }}">Customer Login</a>
@@ -54,7 +54,7 @@
                 <div class="col-md-8">
                     <div class="row text-start">
                         <div class="col-md-4 mb-3">
-                            <i class="fas fa-bolt"></i> Easy Package Management
+                            <i class="fas fa-bolt"></i> Easy product Management
                         </div>
                         <div class="col-md-4 mb-3">
                             <i class="fas fa-file-invoice"></i> Automated Monthly Billing
@@ -65,25 +65,25 @@
                     </div>
                 </div>
             </div>
-            <a href="#packages" class="btn btn-light btn-lg mt-3">View Packages</a>
+            <a href="#products" class="btn btn-light btn-lg mt-3">View products</a>
         </div>
     </section>
 
-    <!-- Packages Section -->
-    <section id="packages" class="py-5 bg-light">
+    <!-- products Section -->
+    <section id="products" class="py-5 bg-light">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="fw-bold">Our Internet Packages</h2>
-                <p class="text-muted">Affordable packages for every need</p>
+                <h2 class="fw-bold">Our Internet products</h2>
+                <p class="text-muted">Affordable products for every need</p>
             </div>
 
             <div class="row">
-                <!-- Regular Packages -->
+                <!-- Regular products -->
                 <div class="col-md-6 mb-4">
-                    <h4 class="text-center mb-4">Regular Packages</h4>
+                    <h4 class="text-center mb-4">Regular products</h4>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <div class="card package-card">
+                            <div class="card product-card">
                                 <div class="card-body text-center">
                                     <h5 class="card-title text-primary">Basic Speed</h5>
                                     <h3 class="text-success">৳500<small>/month</small></h3>
@@ -97,7 +97,7 @@
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <div class="card package-card">
+                            <div class="card product-card">
                                 <div class="card-body text-center">
                                     <h5 class="card-title text-primary">Fast Speed</h5>
                                     <h3 class="text-success">৳800<small>/month</small></h3>
@@ -113,12 +113,12 @@
                     </div>
                 </div>
 
-                <!-- Special Packages -->
+                <!-- Special products -->
                 <div class="col-md-6 mb-4">
-                    <h4 class="text-center mb-4">Add-on Packages</h4>
+                    <h4 class="text-center mb-4">Add-on products</h4>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <div class="card package-card">
+                            <div class="card product-card">
                                 <div class="card-body text-center">
                                     <h5 class="card-title text-primary">Gaming Boost</h5>
                                     <h3 class="text-success">৳200<small>/month</small></h3>
@@ -132,7 +132,7 @@
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <div class="card package-card">
+                            <div class="card product-card">
                                 <div class="card-body text-center">
                                     <h5 class="card-title text-primary">Streaming Plus</h5>
                                     <h3 class="text-success">৳150<small>/month</small></h3>

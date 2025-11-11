@@ -69,9 +69,9 @@ class Invoice extends Model
         return $this->belongsTo(Customer::class, 'c_id', 'c_id');
     }
 
-    public function invoicePackages(): HasMany
+    public function invoiceproducts(): HasMany
     {
-        return $this->hasMany(InvoicePackage::class, 'invoice_id', 'invoice_id');
+        return $this->hasMany(Invoiceproduct::class, 'invoice_id', 'invoice_id');
     }
 
     public function payments(): HasMany
@@ -299,22 +299,22 @@ class Invoice extends Model
         ]);
     }
 
-    public function getPackageNames(): string
+    public function getProductNames(): string
     {
-        return $this->invoicePackages->map(function ($invoicePackage) {
-            return $invoicePackage->package->name ?? 'Unknown Package';
+        return $this->invoiceProducts->map(function ($invoiceProduct) {
+            return $invoiceProduct->product->name ?? 'Unknown Product';
         })->implode(', ');
     }
 
-    public function getTotalPackageAmount(): float
+    public function getTotalProductAmount(): float
     {
-        return $this->invoicePackages->sum('total_package_amount');
+        return $this->invoiceProducts->sum('total_product_amount');
     }
 
     public function recalculateTotals(): bool
     {
-        $packageTotal = $this->getTotalPackageAmount();
-        $subtotal = $packageTotal + $this->previous_due + $this->service_charge;
+        $productTotal = $this->getTotalProductAmount();
+        $subtotal = $productTotal + $this->previous_due + $this->service_charge;
         $vatAmount = $subtotal * ($this->vat_percentage / 100);
         $totalAmount = $subtotal + $vatAmount;
 

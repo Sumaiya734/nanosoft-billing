@@ -43,30 +43,32 @@
             </div>
         </div>
 
-        <!-- Package Management -->
+        <!-- Product Management -->
         <div class="dropdown">
-            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#packageMenu">
-                <i class="fas fa-cube me-2"></i>Package Management
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#productMenu">
+                <i class="fas fa-cube me-2"></i>Product Management
             </a>
-            <div class="collapse submenu" id="packageMenu">
-                <a class="dropdown-item {{ request()->routeIs('admin.packages.index') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">
-                    <i class="fas fa-list me-2"></i>All Packages
+            <div class="collapse submenu" id="productMenu">
+                <a class="dropdown-item {{ request()->routeIs('admin.products.index') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
+                    <i class="fas fa-list me-2"></i>All Products
                 </a>
-                <a class="dropdown-item {{ request()->routeIs('admin.packages.types') ? 'active' : '' }}" href="{{ route('admin.packages.types') }}">
-                    <i class="fas fa-plus me-2"></i>Create Package Type
+                <a class="dropdown-item {{ request()->routeIs('admin.products.types') ? 'active' : '' }}" href="{{ route('admin.products.types') }}">
+                    <i class="fas fa-plus me-2"></i>Create Product Type
                 </a>
-               <a class="dropdown-item {{ request()->routeIs('admin.packages.create') ? 'active' : '' }}" href="{{ route('admin.packages.create') }}">
-                    <i class="fas fa-plus me-2"></i>Create New Package
+                <a class="dropdown-item {{ request()->routeIs('admin.products.create') ? 'active' : '' }}" href="{{ route('admin.products.create') }}">
+                    <i class="fas fa-plus me-2"></i>Create New Product
                 </a>
             </div>
         </div>
 
-        <!-- Customer Packages -->
+        <!-- Customer Products -->
         <div class="nav-item">
-            <a class="nav-link {{ request()->routeIs('admin.customer-to-packages.*') ? 'active' : '' }}" href="{{ route('admin.customer-to-packages.index') }}">
-                <i class="fas fa-box me-2"></i>Customer to Packages
+            <a class="nav-link {{ request()->routeIs('admin.customer-to-products.index') ? 'active' : '' }}" href="{{ route('admin.customer-to-products.index') }}">
+                <i class="fas fa-box me-2"></i>Customer to Products
             </a>
         </div>
+
+        
 
         <!-- Reports & Analytics -->
         <div class="dropdown">

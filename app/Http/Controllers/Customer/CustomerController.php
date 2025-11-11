@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Customer as CustomerModel;
-use App\Models\Package;
+use App\Models\product;
 use App\Models\Invoice;
 use App\Models\Payment;
 use Illuminate\Http\Request;
@@ -94,8 +94,8 @@ class CustomerController extends Controller
     
     public function index(Request $request)
     {
-        // Get customers with packages relationship
-        $query = CustomerModel::with(['user', 'invoices', 'customerPackages.package']);
+        // Get customers with products relationship
+        $query = CustomerModel::with(['user', 'invoices', 'customerproducts.product']);
 
         // Apply filters
         switch ($request->get('filter')) {
@@ -111,9 +111,9 @@ class CustomerController extends Controller
                 });
                 break;
             case 'with_addons':
-                // Filter for customers with special packages
-                $query->whereHas('customerPackages.package', function($q) {
-                    $q->where('package_type', 'special');
+                // Filter for customers with special products
+                $query->whereHas('customerproducts.product', function($q) {
+                    $q->where('product_type', 'special');
                 });
                 break;
         }
@@ -150,15 +150,15 @@ class CustomerController extends Controller
 
     public function create()
     {
-        $regularPackages = Package::whereHas('type', function($query) {
+        $regularproducts = product::whereHas('type', function($query) {
             $query->where('name', 'regular');
         })->get();
         
-        $specialPackages = Package::whereHas('type', function($query) {
+        $specialproducts = product::whereHas('type', function($query) {
             $query->where('name', 'special');
         })->get();
         
-        return view('admin.customers.create', compact('regularPackages', 'specialPackages'));
+        return view('admin.customers.create', compact('regularproducts', 'specialproducts'));
     }
 
     public function store(Request $request)
@@ -171,9 +171,9 @@ class CustomerController extends Controller
         'connection_address' => 'nullable|string|max:500',
         'id_type' => 'nullable|string|in:NID,Passport,Driving License', 
         'id_number' => 'nullable|string|max:100', 
-        'regular_package_id' => 'nullable|exists:packages,p_id',
-        'special_package_ids' => 'nullable|array',
-        'special_package_ids.*' => 'exists:packages,p_id',
+        'regular_product_id' => 'nullable|exists:products,p_id',
+        'special_product_ids' => 'nullable|array',
+        'special_product_ids.*' => 'exists:products,p_id',
         'is_active' => 'sometimes|boolean',
         ]);
 
@@ -203,11 +203,11 @@ class CustomerController extends Controller
                 'is_active' => $request->has('is_active') ? $request->is_active : true,
             ]);
 
-            // Assign Regular Package ONLY if provided
-        if ($request->filled('regular_package_id')) {
-            $regularPkg = Package::find($request->regular_package_id);
+            // Assign Regular product ONLY if provided
+        if ($request->filled('regular_product_id')) {
+            $regularPkg = product::find($request->regular_product_id);
             if ($regularPkg) {
-                $customer->assignPackage(
+                $customer->assignproduct(
                     $regularPkg->p_id,
                     $regularPkg->monthly_price,
                     1, // billingCycleMonths
@@ -217,12 +217,12 @@ class CustomerController extends Controller
         }
 
 
-           // Assign Special Packages
-        if ($request->filled('special_package_ids')) {
-            foreach ($request->special_package_ids as $pkgId) {
-                $pkg = Package::find($pkgId);
+           // Assign Special products
+        if ($request->filled('special_product_ids')) {
+            foreach ($request->special_product_ids as $pkgId) {
+                $pkg = product::find($pkgId);
                 if ($pkg) {
-                    $customer->assignPackage(
+                    $customer->assignproduct(
                         $pkg->p_id,
                         $pkg->monthly_price,
                         1, // billingCycleMonths
@@ -247,7 +247,7 @@ class CustomerController extends Controller
 
     public function show($id)
     {
-        $customer = CustomerModel::with(['user', 'invoices', 'payments', 'customerPackages.package'])->findOrFail($id);
+        $customer = CustomerModel::with(['user', 'invoices', 'payments', 'customerproducts.product'])->findOrFail($id);
         
         // Calculate statistics
         $totalInvoices = $customer->invoices->count();
@@ -271,17 +271,17 @@ class CustomerController extends Controller
 
     public function edit($id)
     {
-        $customer = CustomerModel::with(['user', 'customerPackages.package'])->findOrFail($id);
+        $customer = CustomerModel::with(['user', 'customerproducts.product'])->findOrFail($id);
         
-        $regularPackages = Package::whereHas('type', function($query) {
+        $regularproducts = product::whereHas('type', function($query) {
             $query->where('name', 'regular');
         })->get();
         
-        $specialPackages = Package::whereHas('type', function($query) {
+        $specialproducts = product::whereHas('type', function($query) {
             $query->where('name', 'special');
         })->get();
         
-        return view('admin.customers.edit', compact('customer', 'regularPackages', 'specialPackages'));
+        return view('admin.customers.edit', compact('customer', 'regularproducts', 'specialproducts'));
     }
 
     public function update(Request $request, $id)
@@ -294,11 +294,8 @@ class CustomerController extends Controller
             'phone' => 'required|string|max:30',
             'address' => 'required|string|max:500',
             'connection_address' => 'nullable|string|max:500',
-            'id_type' => 'nullable|string|in:nid,passport,driving_license',
+            'id_type' => 'nullable|string|in:NID,Passport,Driving License',
             'id_number' => 'nullable|string|max:100',
-            'regular_package_id' => 'nullable|exists:packages,p_id',
-            'special_package_ids' => 'nullable|array',
-            'special_package_ids.*' => 'exists:packages,p_id',
             'is_active' => 'sometimes|boolean',
         ]);
 
@@ -322,37 +319,6 @@ class CustomerController extends Controller
                 'id_number' => $request->id_number,
                 'is_active' => $request->has('is_active') ? $request->is_active : $customer->is_active,
             ]);
-
-            // Sync Packages - remove old and add new
-            $customer->customerPackages()->delete();
-
-             // Assign Regular Package ONLY if provided
-        if ($request->filled('regular_package_id')) {
-            $regularPkg = Package::find($request->regular_package_id);
-            if ($regularPkg) {
-                $customer->assignPackage(
-                    $regularPkg->p_id,
-                    $regularPkg->monthly_price,
-                    1, // billingCycleMonths
-                    'active'
-                );
-            }
-        }
-
-        // Assign Special Packages
-        if ($request->filled('special_package_ids')) {
-            foreach ($request->special_package_ids as $pkgId) {
-                $pkg = Package::find($pkgId);
-                if ($pkg) {
-                    $customer->assignPackage(
-                        $pkg->p_id,
-                        $pkg->monthly_price,
-                        1, // billingCycleMonths
-                        'active'
-                    );
-                }
-            }
-        }
 
             DB::commit();
 
@@ -380,8 +346,8 @@ class CustomerController extends Controller
                     ->with('error', 'Cannot delete customer with existing invoices or payments. Please delete related records first.');
             }
 
-            // Remove packages first
-            $customer->customerPackages()->delete();
+            // Remove products first
+            $customer->customerproducts()->delete();
             
             // Delete user account first
             if ($customer->user) {
@@ -438,7 +404,7 @@ class CustomerController extends Controller
     {
         $user = Auth::user();
         $customer = CustomerModel::where('user_id', $user->id)
-            ->with(['invoices', 'payments', 'customerPackages.package'])
+            ->with(['invoices', 'payments', 'customerproducts.product'])
             ->firstOrFail();
 
         // Calculate statistics for customer portal
@@ -463,43 +429,43 @@ class CustomerController extends Controller
         ));
     }
 
-    // ========== PACKAGE MANAGEMENT METHODS ==========
+    // ========== product MANAGEMENT METHODS ==========
 
-    public function addPackage(Request $request, $id)
+    public function addproduct(Request $request, $id)
     {
         $customer = CustomerModel::findOrFail($id);
         
         $request->validate([
-            'package_id' => 'required|exists:packages,p_id'
+            'product_id' => 'required|exists:products,p_id'
         ]);
 
         try {
-            $pkg = Package::findOrFail($request->package_id);
-            $customer->assignPackage(
+            $pkg = product::findOrFail($request->product_id);
+            $customer->assignproduct(
                 $pkg->p_id,
                 $pkg->monthly_price,
                 1, // billingCycleMonths
                 'active'
             );
-            return redirect()->back()->with('success', 'Package added successfully!');
+            return redirect()->back()->with('success', 'product added successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error adding package: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error adding product: ' . $e->getMessage());
         }
     }
 
-    public function removePackage(Request $request, $id)
+    public function removeproduct(Request $request, $id)
     {
         $customer = CustomerModel::findOrFail($id);
         
         $request->validate([
-            'pivot_id' => 'required|exists:customer_to_packages,cp_id'
+            'pivot_id' => 'required|exists:customer_to_products,cp_id'
         ]);
 
         try {
-            DB::table('customer_to_packages')->where('cp_id', $request->pivot_id)->delete();
-            return redirect()->back()->with('success', 'Package removed successfully!');
+            DB::table('customer_to_products')->where('cp_id', $request->pivot_id)->delete();
+            return redirect()->back()->with('success', 'product removed successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error removing package: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error removing product: ' . $e->getMessage());
         }
     }
 
@@ -510,7 +476,7 @@ class CustomerController extends Controller
         echo "<h3>Debug Customers</h3>";
         
         // Check customers from customers table
-        $customersFromCustomerTable = CustomerModel::with(['user', 'customerPackages'])->get();
+        $customersFromCustomerTable = CustomerModel::with(['user', 'customerproducts'])->get();
         echo "<h4>From Customer Table:</h4>";
         
         if ($customersFromCustomerTable->count() === 0) {
@@ -523,7 +489,7 @@ class CustomerController extends Controller
                 echo "Name: " . $cust->name . "<br>";
                 echo "Email: " . $cust->email . "<br>";
                 echo "Phone: " . ($cust->phone ?? 'NULL') . "<br>";
-                echo "Packages Count: " . $cust->customerPackages->count() . "<br>";
+                echo "products Count: " . $cust->customerproducts->count() . "<br>";
                 echo "Active: " . ($cust->is_active ? 'YES' : 'NO') . "<br>";
                 echo "User exists: " . ($cust->user ? 'YES' : 'NO') . "<br>";
                 if ($cust->user) {
@@ -550,18 +516,18 @@ class CustomerController extends Controller
             }
         }
 
-        // Check packages
-        $packages = Package::all();
-        echo "<h4>Available Packages:</h4>";
+        // Check products
+        $products = product::all();
+        echo "<h4>Available products:</h4>";
         
-        if ($packages->count() === 0) {
-            echo "❌ No packages found!<br>";
+        if ($products->count() === 0) {
+            echo "❌ No products found!<br>";
         } else {
-            foreach ($packages as $package) {
-                echo "Package ID: " . $package->p_id . "<br>";
-                echo "Package Name: " . $package->name . "<br>";
-                echo "Package Type: " . $package->package_type . "<br>";
-                echo "Monthly Price: ৳" . $package->monthly_price . "<br>";
+            foreach ($products as $product) {
+                echo "product ID: " . $product->p_id . "<br>";
+                echo "product Name: " . $product->name . "<br>";
+                echo "product Type: " . $product->product_type . "<br>";
+                echo "Monthly Price: ৳" . $product->monthly_price . "<br>";
                 echo "<hr>";
             }
         }

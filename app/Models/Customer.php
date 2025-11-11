@@ -41,12 +41,12 @@ class Customer extends Model
         'full_address',
         'total_monthly_charge',
         'total_due',
-        'has_regular_package',
-        'has_special_packages',
+        'has_regular_product',
+        'has_special_products',
         'has_due_payments',
         'status_badge',
         'latest_invoice',
-        'package_info',
+        'product_info',
     ];
 
     // ==================== RELATIONSHIPS ====================
@@ -57,60 +57,60 @@ class Customer extends Model
     }
 
     /**
-     * FIXED: Use HasMany through CustomerToPackage instead of BelongsToMany
+     * FIXED: Use HasMany through CustomerToproduct instead of BelongsToMany
      */
-    public function customerPackages(): HasMany
+    public function customerproducts(): HasMany
     {
-        return $this->hasMany(CustomerPackage::class, 'c_id', 'c_id');
+        return $this->hasMany(Customerproduct::class, 'c_id', 'c_id');
     }
 
     /**
-     * FIXED: Get packages through customerPackages relationship
+     * FIXED: Get products through customerproducts relationship
      */
-    public function packages()
+    public function products()
     {
         return $this->hasManyThrough(
-            Package::class,
-            CustomerPackage::class,
-            'c_id', // Foreign key on customer_to_packages table
-            'p_id', // Foreign key on packages table
+            product::class,
+            Customerproduct::class,
+            'c_id', // Foreign key on customer_to_products table
+            'p_id', // Foreign key on products table
             'c_id', // Local key on customers table
-            'p_id'  // Local key on customer_to_packages table
+            'p_id'  // Local key on customer_to_products table
         );
     }
 
     /**
-     * FIXED: Active customer packages
+     * FIXED: Active customer products
      */
-    public function activeCustomerPackages(): HasMany
+    public function activeCustomerproducts(): HasMany
     {
-        return $this->customerPackages()
+        return $this->customerproducts()
             ->where('status', 'active')
             ->where('is_active', true);
     }
 
     /**
-     * FIXED: Active packages through active customer packages
+     * FIXED: Active products through active customer products
      */
-    public function activePackages()
+    public function activeproducts()
     {
         return $this->hasManyThrough(
-            Package::class,
-            CustomerPackage::class,
+            product::class,
+            Customerproduct::class,
             'c_id',
             'p_id',
             'c_id',
             'p_id'
-        )->where('customer_to_packages.status', 'active')
-         ->where('customer_to_packages.is_active', true);
+        )->where('customer_to_products.status', 'active')
+         ->where('customer_to_products.is_active', true);
     }
 
     /**
-     * FIXED: Regular package
+     * FIXED: Regular product
      */
-    public function regularPackage(): ?Package
+    public function regularproduct(): ?product
     {
-        return $this->activePackages()
+        return $this->activeproducts()
             ->whereHas('type', function($query) {
                 $query->where('name', 'regular');
             })
@@ -118,20 +118,20 @@ class Customer extends Model
     }
 
     /**
-     * FIXED: Special packages
+     * FIXED: Special products
      */
-    public function specialPackages()
+    public function specialproducts()
     {
-        return $this->activePackages()
+        return $this->activeproducts()
             ->whereHas('type', function($query) {
                 $query->where('name', 'special');
             })
             ->get();
     }
 
-    public function mainPackage(): ?Package
+    public function mainproduct(): ?product
     {
-        return $this->regularPackage();
+        return $this->regularproduct();
     }
 
     public function invoices(): HasMany
@@ -184,53 +184,53 @@ class Customer extends Model
     }
 
     /**
-     * FIXED: Scope for customers with specific package
+     * FIXED: Scope for customers with specific product
      */
-    public function scopeWithPackage(Builder $query, int $packageId): Builder
+    public function scopeWithproduct(Builder $query, int $productId): Builder
     {
-        return $query->whereHas('customerPackages', function ($q) use ($packageId) {
-            $q->where('p_id', $packageId)
+        return $query->whereHas('customerproducts', function ($q) use ($productId) {
+            $q->where('p_id', $productId)
               ->where('status', 'active')
               ->where('is_active', true);
         });
     }
 
     /**
-     * FIXED: Scope for customers with regular package
+     * FIXED: Scope for customers with regular product
      */
-    public function scopeWithRegularPackage(Builder $query): Builder
+    public function scopeWithRegularproduct(Builder $query): Builder
     {
-        return $query->whereHas('customerPackages.package', function ($q) {
+        return $query->whereHas('customerproducts.product', function ($q) {
             $q->whereHas('type', function($query) {
                 $query->where('name', 'regular');
             });
-        })->whereHas('customerPackages', function ($q) {
+        })->whereHas('customerproducts', function ($q) {
             $q->where('status', 'active')
               ->where('is_active', true);
         });
     }
 
     /**
-     * FIXED: Scope for customers with special packages
+     * FIXED: Scope for customers with special products
      */
-    public function scopeWithSpecialPackages(Builder $query): Builder
+    public function scopeWithSpecialproducts(Builder $query): Builder
     {
-        return $query->whereHas('customerPackages.package', function ($q) {
+        return $query->whereHas('customerproducts.product', function ($q) {
             $q->whereHas('type', function($query) {
                 $query->where('name', 'special');
             });
-        })->whereHas('customerPackages', function ($q) {
+        })->whereHas('customerproducts', function ($q) {
             $q->where('status', 'active')
               ->where('is_active', true);
         });
     }
 
     /**
-     * FIXED: Scope for customers with no packages
+     * FIXED: Scope for customers with no products
      */
-    public function scopeWithNoPackage(Builder $query): Builder
+    public function scopeWithNoproduct(Builder $query): Builder
     {
-        return $query->whereDoesntHave('customerPackages', function ($q) {
+        return $query->whereDoesntHave('customerproducts', function ($q) {
             $q->where('status', 'active')
               ->where('is_active', true);
         });
@@ -258,8 +258,8 @@ class Customer extends Model
      */
     public function getTotalMonthlyChargeAttribute(): float
     {
-        return $this->activeCustomerPackages->sum(function ($customerPackage) {
-            return $customerPackage->package->monthly_price ?? 0;
+        return $this->activeCustomerproducts->sum(function ($customerproduct) {
+            return $customerproduct->product->monthly_price ?? 0;
         });
     }
 
@@ -270,12 +270,12 @@ class Customer extends Model
     }
 
     /**
-     * FIXED: Check if has regular package
+     * FIXED: Check if has regular product
      */
-    public function getHasRegularPackageAttribute(): bool
+    public function getHasRegularproductAttribute(): bool
     {
-        return $this->activeCustomerPackages()
-            ->whereHas('package', function ($q) {
+        return $this->activeCustomerproducts()
+            ->whereHas('product', function ($q) {
                 $q->whereHas('type', function($query) {
                     $query->where('name', 'regular');
                 });
@@ -284,12 +284,12 @@ class Customer extends Model
     }
 
     /**
-     * FIXED: Check if has special packages
+     * FIXED: Check if has special products
      */
-    public function getHasSpecialPackagesAttribute(): bool
+    public function getHasSpecialproductsAttribute(): bool
     {
-        return $this->activeCustomerPackages()
-            ->whereHas('package', function ($q) {
+        return $this->activeCustomerproducts()
+            ->whereHas('product', function ($q) {
                 $q->whereHas('type', function($query) {
                     $query->where('name', 'special');
                 });
@@ -319,25 +319,25 @@ class Customer extends Model
     }
 
     /**
-     * FIXED: Package info accessor
+     * FIXED: product info accessor
      */
-    public function getPackageInfoAttribute(): string
+    public function getproductInfoAttribute(): string
     {
-        $regularPackage = $this->activeCustomerPackages()
-            ->whereHas('package', function ($q) {
+        $regularproduct = $this->activeCustomerproducts()
+            ->whereHas('product', function ($q) {
                 $q->whereHas('type', function($query) {
                     $query->where('name', 'regular');
                 });
             })
-            ->with('package')
+            ->with('product')
             ->first();
 
-        if (!$regularPackage) {
-            return 'No Package Assigned';
+        if (!$regularproduct) {
+            return 'No product Assigned';
         }
 
-        $specialCount = $this->activeCustomerPackages()
-            ->whereHas('package', function ($q) {
+        $specialCount = $this->activeCustomerproducts()
+            ->whereHas('product', function ($q) {
                 $q->whereHas('type', function($query) {
                     $query->where('name', 'special');
                 });
@@ -345,28 +345,28 @@ class Customer extends Model
             ->count();
         
         return $specialCount > 0 
-            ? "{$regularPackage->package->name} + {$specialCount} add-on(s)" 
-            : $regularPackage->package->name;
+            ? "{$regularproduct->product->name} + {$specialCount} add-on(s)" 
+            : $regularproduct->product->name;
     }
 
     // ==================== METHODS ====================
 
     /**
-     * FIXED: Assign package method
+     * FIXED: Assign product method
      */
-    public function assignPackage(
-        int $packageId,
+    public function assignproduct(
+        int $productId,
         int $billingCycleMonths = 1,
         string $status = 'active'
     ): bool {
-        // Check if package already assigned and active
-        if ($this->hasActivePackage($packageId)) {
+        // Check if product already assigned and active
+        if ($this->hasActiveproduct($productId)) {
             return false;
         }
 
-        CustomerPackage::create([
+        Customerproduct::create([
             'c_id' => $this->c_id,
-            'p_id' => $packageId,
+            'p_id' => $productId,
             'assign_date' => now()->toDateString(),
             'billing_cycle_months' => $billingCycleMonths,
             'status' => $status,
@@ -376,11 +376,11 @@ class Customer extends Model
         return true;
     }
 
-    public function assignPackages(array $packageData): void
+    public function assignproducts(array $productData): void
     {
-        foreach ($packageData as $data) {
-            $this->assignPackage(
-                $data['package_id'],
+        foreach ($productData as $data) {
+            $this->assignproduct(
+                $data['product_id'],
                 $data['billing_cycle_months'] ?? 1,
                 $data['status'] ?? 'active'
             );
@@ -388,42 +388,42 @@ class Customer extends Model
     }
 
     /**
-     * FIXED: Update package status
+     * FIXED: Update product status
      */
-    public function updatePackageStatus(int $cpId, string $status): bool
+    public function updateproductStatus(int $cpId, string $status): bool
     {
-        return $this->customerPackages()
+        return $this->customerproducts()
             ->where('cp_id', $cpId)
             ->update(['status' => $status]) > 0;
     }
 
     /**
-     * FIXED: Deactivate package
+     * FIXED: Deactivate product
      */
-    public function deactivatePackage(int $cpId): bool
+    public function deactivateproduct(int $cpId): bool
     {
-        return $this->customerPackages()
+        return $this->customerproducts()
             ->where('cp_id', $cpId)
             ->update(['is_active' => false]) > 0;
     }
 
     /**
-     * FIXED: Check if has package
+     * FIXED: Check if has product
      */
-    public function hasPackage(int $packageId): bool
+    public function hasproduct(int $productId): bool
     {
-        return $this->customerPackages()
-            ->where('p_id', $packageId)
+        return $this->customerproducts()
+            ->where('p_id', $productId)
             ->exists();
     }
 
     /**
-     * FIXED: Check if has active package
+     * FIXED: Check if has active product
      */
-    public function hasActivePackage(int $packageId): bool
+    public function hasActiveproduct(int $productId): bool
     {
-        return $this->customerPackages()
-            ->where('p_id', $packageId)
+        return $this->customerproducts()
+            ->where('p_id', $productId)
             ->where('status', 'active')
             ->where('is_active', true)
             ->exists();
@@ -445,11 +445,11 @@ class Customer extends Model
     }
 
     /**
-     * FIXED: Get active package count
+     * FIXED: Get active product count
      */
-    public function getActivePackageCount(): int
+    public function getActiveproductCount(): int
     {
-        return $this->activeCustomerPackages()->count();
+        return $this->activeCustomerproducts()->count();
     }
 
     public function getTotalRevenue(): float
@@ -519,10 +519,10 @@ class Customer extends Model
     public function scopeWithCommonRelations(Builder $query): Builder
     {
         return $query->with([
-            'customerPackages' => function ($query) {
+            'customerproducts' => function ($query) {
                 $query->where('status', 'active')
                       ->where('is_active', true)
-                      ->with('package');
+                      ->with('product');
             },
             'invoices' => function ($query) {
                 $query->latest()->limit(5);

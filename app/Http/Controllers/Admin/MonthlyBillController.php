@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\Package;
-use App\Models\CustomerPackage;
+use App\Models\product;
+use App\Models\Customerproduct;
 use Carbon\Carbon;
 
 class MonthlyBillController extends Controller
@@ -33,7 +33,7 @@ class MonthlyBillController extends Controller
             $invoices = Invoice::with([
                 'customer', 
                 'payments',
-                'customer.customerPackages.package'
+                'customer.customerproducts.product'
             ])
             ->whereYear('issue_date', $monthDate->year)
             ->whereMonth('issue_date', $monthDate->month)
@@ -150,11 +150,11 @@ class MonthlyBillController extends Controller
                 'c.customer_id',
                 'c.email',
                 'c.phone',
-                DB::raw('SUM(p.monthly_price * cp.billing_cycle_months) as total_package_amount'),
-                DB::raw('GROUP_CONCAT(CONCAT(p.p_id, ":", p.monthly_price, ":", cp.billing_cycle_months, ":", cp.cp_id)) as package_details')
+                DB::raw('SUM(p.monthly_price * cp.billing_cycle_months) as total_product_amount'),
+                DB::raw('GROUP_CONCAT(CONCAT(p.p_id, ":", p.monthly_price, ":", cp.billing_cycle_months, ":", cp.cp_id)) as product_details')
             )
-            ->join('customer_to_packages as cp', 'c.c_id', '=', 'cp.c_id')
-            ->join('packages as p', 'cp.p_id', '=', 'p.p_id')
+            ->join('customer_to_products as cp', 'c.c_id', '=', 'cp.c_id')
+            ->join('products as p', 'cp.p_id', '=', 'p.p_id')
             ->where('cp.status', 'active')
             ->where('cp.is_active', 1)
             ->where('c.is_active', 1)
@@ -177,13 +177,13 @@ class MonthlyBillController extends Controller
             ->orderBy('c.name')
             ->get()
             ->map(function($customer) {
-                // Parse package details
-                $packageDetails = [];
-                if ($customer->package_details) {
-                    $packages = explode(',', $customer->package_details);
-                    foreach ($packages as $package) {
-                        list($p_id, $price, $cycle, $cp_id) = explode(':', $package);
-                        $packageDetails[] = [
+                // Parse product details
+                $productDetails = [];
+                if ($customer->product_details) {
+                    $products = explode(',', $customer->product_details);
+                    foreach ($products as $product) {
+                        list($p_id, $price, $cycle, $cp_id) = explode(':', $product);
+                        $productDetails[] = [
                             'p_id' => $p_id,
                             'cp_id' => $cp_id,
                             'monthly_price' => $price,
@@ -191,7 +191,7 @@ class MonthlyBillController extends Controller
                         ];
                     }
                 }
-                $customer->package_details = $packageDetails;
+                $customer->product_details = $productDetails;
                 return $customer;
             });
     }
@@ -201,10 +201,10 @@ class MonthlyBillController extends Controller
      */
     private function createCustomerMonthlyInvoice($customer, Carbon $monthDate, $serviceCharge = 50.00, $vatPercentage = 5.00)
     {
-        // Calculate total package amount from active packages that are due this month
-        $packageAmount = $customer->total_package_amount ?? 0;
+        // Calculate total product amount from active products that are due this month
+        $productAmount = $customer->total_product_amount ?? 0;
 
-        $subtotal = $packageAmount + $serviceCharge;
+        $subtotal = $productAmount + $serviceCharge;
         $vatAmount = $subtotal * ($vatPercentage / 100);
         $totalAmount = $subtotal + $vatAmount;
 
@@ -245,9 +245,9 @@ class MonthlyBillController extends Controller
     {
         $notes = [];
         
-        foreach (($customer->package_details ?? []) as $package) {
-            $cycleText = $this->getBillingCycleText($package['billing_cycle_months']);
-            $notes[] = "{$cycleText} billing for {$package['billing_cycle_months']} month(s)";
+        foreach (($customer->product_details ?? []) as $product) {
+            $cycleText = $this->getBillingCycleText($product['billing_cycle_months']);
+            $notes[] = "{$cycleText} billing for {$product['billing_cycle_months']} month(s)";
         }
         
         $baseNote = 'Auto-generated: ' . implode(', ', $notes) . ' - Due for ' . $monthDate->format('F Y');
@@ -305,8 +305,8 @@ class MonthlyBillController extends Controller
     {
         $months = collect();
         
-        // Get the earliest customer package assignment date using DB query
-        $earliestAssignment = DB::table('customer_to_packages')
+        // Get the earliest customer product assignment date using DB query
+        $earliestAssignment = DB::table('customer_to_products')
             ->whereNotNull('assign_date')
             ->orderBy('assign_date')
             ->first();
@@ -403,7 +403,7 @@ class MonthlyBillController extends Controller
             $invoice = Invoice::with([
                 'customer',
                 'payments',
-                'customer.customerPackages.package'
+                'customer.customerproducts.product'
             ])->findOrFail($invoiceId);
 
             $html = view('admin.billing.partials.invoice-details-modal', compact('invoice'))->render();
@@ -429,7 +429,7 @@ class MonthlyBillController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,bkash,bank,card,nagad,rocket',
+            'payment_method' => 'required|in:cash,bank_transfer,mobile_banking,card,online',
             'payment_date' => 'required|date',
             'notes' => 'nullable|string',
         ]);
@@ -580,42 +580,42 @@ class MonthlyBillController extends Controller
     }
 
     /**
-     * Get customer packages for a specific month
+     * Get customer products for a specific month
      */
-    public function getCustomerPackages($customerId, $month)
+    public function getCustomerproducts($customerId, $month)
     {
         try {
             $monthDate = Carbon::createFromFormat('Y-m', $month);
             
             $customer = Customer::with([
-                'customerPackages' => function($query) use ($monthDate) {
+                'customerproducts' => function($query) use ($monthDate) {
                     $query->where('status', 'active')
                           ->where('is_active', true)
-                          ->with('package');
+                          ->with('product');
                 }
             ])->findOrFail($customerId);
 
             return response()->json([
                 'success' => true,
                 'customer' => $customer->name,
-                'packages' => $customer->customerPackages->map(function($cp) {
+                'products' => $customer->customerproducts->map(function($cp) {
                     return [
-                        'package_name' => $cp->package->name,
-                        'monthly_price' => $cp->package->monthly_price,
+                        'product_name' => $cp->product->name,
+                        'monthly_price' => $cp->product->monthly_price,
                         'billing_cycle' => $cp->billing_cycle_months,
-                        'total_amount' => $cp->package->monthly_price * $cp->billing_cycle_months
+                        'total_amount' => $cp->product->monthly_price * $cp->billing_cycle_months
                     ];
                 }),
-                'total_monthly' => $customer->customerPackages->sum(function($cp) {
-                    return $cp->package->monthly_price;
+                'total_monthly' => $customer->customerproducts->sum(function($cp) {
+                    return $cp->product->monthly_price;
                 })
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Get customer packages error: ' . $e->getMessage());
+            Log::error('Get customer products error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error loading customer packages'
+                'message' => 'Error loading customer products'
             ], 500);
         }
     }
