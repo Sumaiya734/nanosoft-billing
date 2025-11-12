@@ -1,16 +1,16 @@
 @extends('layouts.admin')
 
-@section('title', 'Assign Package')
+@section('title', 'Assign Product')
 
 @section('content')
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col">
-            <h1 class="page-title"><i class="fas fa-plus-circle me-2"></i>Assign Package to Customer</h1>
+            <h1 class="page-title"><i class="fas fa-plus-circle me-2"></i>Assign Products to Customer</h1>
         </div>
         <div class="col-auto">
             <a href="{{ route('admin.customer-to-products.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Back to Packages
+                <i class="fas fa-arrow-left me-2"></i>Back to Products
             </a>
         </div>
     </div>
@@ -47,10 +47,10 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0"><i class="fas fa-user-tag me-2"></i>Package Assignment Form</h5>
+                    <h5 class="card-title mb-0"><i class="fas fa-user-tag me-2"></i>Product Assignment Form</h5>
                 </div>
                 <div class="card-body">
-                    <form id="assignPackageForm" action="{{ route('admin.customer-to-products.store') }}" method="POST">
+                    <form id="assignProductForm" action="{{ route('admin.customer-to-products.store') }}" method="POST">
                         @csrf
 
                         <!-- Customer Selection -->
@@ -117,32 +117,32 @@
                             </div>
                         </div>
 
-                        <!-- Packages Section -->
+                        <!-- Products Section -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <label class="form-label fw-bold">Select Packages *</label>
-                                    <button type="button" class="btn btn-primary btn-sm" id="addPackageBtn">
-                                        <i class="fas fa-plus me-1"></i>Add Another Package
+                                    <label class="form-label fw-bold">Select Products *</label>
+                                    <button type="button" class="btn btn-primary btn-sm" id="addProductBtn">
+                                        <i class="fas fa-plus me-1"></i>Add Another Product
                                     </button>
                                 </div>
 
-                                <div class="packages-container" id="packagesContainer">
-                                    <!-- Initial Package Row -->
-                                    <div class="package-row mb-3" data-index="0">
+                                <div class="products-container" id="productsContainer">
+                                    <!-- Initial Product Row - NO DELETE BUTTON -->
+                                    <div class="product-row mb-3" data-index="0">
                                         <div class="row g-2 align-items-end">
                                             <div class="col-md-4">
-                                                <label class="form-label">Package 1 *</label>
-                                                <select class="form-select package-select @error('products.0.product_id') is-invalid @enderror"
+                                                <label class="form-label">Product 1 *</label>
+                                                <select class="form-select product-select @error('products.0.product_id') is-invalid @enderror"
                                                         name="products[0][product_id]" data-index="0" required>
-                                                    <option value="">Select a package...</option>
-                                                    @foreach($packages as $package)
-                                                        <option value="{{ $package->p_id }}"
-                                                                data-price="{{ $package->monthly_price }}"
-                                                                data-type="{{ $package->product_type }}"
-                                                                {{ old('products.0.product_id') == $package->p_id ? 'selected' : '' }}>
-                                                            {{ $package->name }} - ৳{{ number_format($package->monthly_price, 2) }}/month
-                                                            ({{ ucfirst($package->product_type) }})
+                                                    <option value="">Select a product...</option>
+                                                    @foreach($products as $product)
+                                                        <option value="{{ $product->p_id }}"
+                                                                data-price="{{ $product->monthly_price }}"
+                                                                data-type="{{ $product->product_type }}"
+                                                                {{ old('products.0.product_id') == $product->p_id ? 'selected' : '' }}>
+                                                            {{ $product->name }} - ৳{{ number_format($product->monthly_price, 2) }}/month
+                                                            ({{ ucfirst($product->product_type) }})
                                                         </option>
                                                     @endforeach
                                                 </select>
@@ -152,22 +152,7 @@
                                             </div>
 
                                             <div class="col-md-2">
-                                                <label class="form-label">Monthly Price *</label>
-                                                <div class="input-group">
-                                                    <span class="input-group-text">৳</span>
-                                                    <input type="number" class="form-control monthly-price @error('products.0.monthly_price') is-invalid @enderror"
-                                                           name="products[0][monthly_price]" 
-                                                           data-index="0" 
-                                                           value="{{ old('products.0.monthly_price', '0') }}" 
-                                                           min="0" step="0.01" required>
-                                                </div>
-                                                @error('products.0.monthly_price')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label class="form-label">Billing Months *</label>
+                                                <label class="form-label">Billing cycle *</label>
                                                 <select class="form-select billing-months @error('products.0.billing_cycle_months') is-invalid @enderror"
                                                         name="products[0][billing_cycle_months]" data-index="0" required>
                                                     <option value="1" {{ old('products.0.billing_cycle_months', '1') == '1' ? 'selected' : '' }}>1 Month</option>
@@ -177,6 +162,21 @@
                                                     <option value="12" {{ old('products.0.billing_cycle_months') == '12' ? 'selected' : '' }}>12 Months</option>
                                                 </select>
                                                 @error('products.0.billing_cycle_months')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">Price *</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">৳</span>
+                                                    <input type="number" class="form-control monthly-price @error('products.0.monthly_price') is-invalid @enderror"
+                                                           name="products[0][monthly_price]" 
+                                                           data-index="0" 
+                                                           value="{{ old('products.0.monthly_price', '0') }}" 
+                                                           min="0" step="0.01" required>
+                                                </div>
+                                                @error('products.0.monthly_price')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
                                             </div>
@@ -208,14 +208,12 @@
 
                                             <div class="col-md-1">
                                                 <label class="form-label">Amount</label>
-                                                <div class="package-amount" data-index="0">৳ 0</div>
+                                                <div class="product-amount" data-index="0">৳ 0</div>
                                             </div>
 
+                                            <!-- REMOVED DELETE BUTTON FOR FIRST PRODUCT -->
                                             <div class="col-md-1">
-                                                <label class="form-label">&nbsp;</label>
-                                                <button type="button" class="btn btn-danger btn-sm w-100 remove-package-btn" disabled>
-                                                    <i class="fas fa-times">Delete</i>
-                                                </button>
+                                                <!-- Empty column to maintain layout -->
                                             </div>
                                         </div>
                                     </div>
@@ -229,8 +227,8 @@
                                 <div class="summary-card">
                                     <h6 class="summary-title">Order Summary</h6>
                                     <div class="summary-details" id="summaryDetails">
-                                        <div class="summary-row" id="packageSummary0">
-                                            <span>Package 1:</span><span>৳ 0</span>
+                                        <div class="summary-row" id="productSummary0">
+                                            <span>Product 1:</span><span>৳ 0</span>
                                         </div>
                                     </div>
                                     <div class="summary-divider"></div>
@@ -246,7 +244,7 @@
                         <div class="row">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-success btn-lg w-100" id="submitBtn" disabled>
-                                    <i class="fas fa-check me-2"></i>Assign Packages
+                                    <i class="fas fa-check me-2"></i>Assign Products
                                 </button>
                             </div>
                         </div>
@@ -257,14 +255,14 @@
     </div>
 </div>
 
-<!-- Template for new package rows -->
-<template id="packageOptionsTemplate">
-    @foreach($packages as $package)
-        <option value="{{ $package->p_id }}"
-                data-price="{{ $package->monthly_price }}"
-                data-type="{{ $package->product_type }}">
-            {{ $package->name }} - ৳{{ number_format($package->monthly_price, 2) }}/month
-            ({{ ucfirst($package->product_type) }})
+<!-- Template for new product rows -->
+<template id="productOptionsTemplate">
+    @foreach($products as $product)
+        <option value="{{ $product->p_id }}"
+                data-price="{{ $product->monthly_price }}"
+                data-type="{{ $product->product_type }}">
+            {{ $product->name }} - ৳{{ number_format($product->monthly_price, 2) }}/month
+            ({{ ucfirst($product->product_type) }})
         </option>
     @endforeach
 </template>
@@ -286,18 +284,18 @@
     .card:hover {
         transform: translateY(-5px);
     }
-    .package-row {
+    .product-row {
         background: #f8f9fa;
         border-radius: 10px;
         padding: 1.5rem;
         border: 2px solid #e9ecef;
         transition: all 0.3s;
     }
-    .package-row:hover {
+    .product-row:hover {
         border-color: #3498db;
         background: #f1f3f4;
     }
-    .package-amount {
+    .product-amount {
         font-weight: 700;
         color: #27ae60;
         font-size: 1rem;
@@ -315,7 +313,7 @@
         font-weight: 600;
         color: #495057;
     }
-    .remove-package-btn {
+    .remove-product-btn {
         height: 42px;
         display: flex;
         align-items: center;
@@ -381,7 +379,7 @@
     .customer-address {
         font-size: 0.8rem;
     }
-    .package-select option:disabled {
+    .product-select option:disabled {
         color: #ccc;
         background: #f8f9fa;
     }
@@ -400,24 +398,25 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    let packageCount = 1;
-    let packageAmounts = {};
-    let selectedPackages = new Set();
+    let productCount = 1;
+    let productAmounts = {};
+    let selectedProducts = new Set();
+    let availableIndexes = []; // Track available indexes for reuse
 
     const customerSearch = document.getElementById('customerSearch');
     const customerResults = document.getElementById('customerResults');
     const selectedCustomer = document.getElementById('selectedCustomer');
     const customerIdInput = document.getElementById('customerId');
     const submitBtn = document.getElementById('submitBtn');
-    const packageOptionsTemplate = document.getElementById('packageOptionsTemplate');
+    const productOptionsTemplate = document.getElementById('productOptionsTemplate');
 
     // Update submit button state
     function updateSubmitButton() {
         const hasCustomer = !!customerIdInput.value;
-        const packageSelects = Array.from(document.querySelectorAll('.package-select'));
-        const hasPackages = packageSelects.some(sel => sel.value && sel.value !== '');
+        const productSelects = Array.from(document.querySelectorAll('.product-select'));
+        const hasProducts = productSelects.some(sel => sel.value && sel.value !== '');
         
-        const shouldEnable = hasCustomer && hasPackages;
+        const shouldEnable = hasCustomer && hasProducts;
         
         submitBtn.disabled = !shouldEnable;
         
@@ -486,19 +485,32 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Add Package Row
-    document.getElementById('addPackageBtn').addEventListener('click', function () {
-        const idx = packageCount++;
+    // Get next available index (reuse deleted indexes first)
+    function getNextAvailableIndex() {
+        if (availableIndexes.length > 0) {
+            return availableIndexes.shift(); // Use the first available index
+        } else {
+            return productCount++; // Use a new index
+        }
+    }
+
+    // Add Product Row
+    document.getElementById('addProductBtn').addEventListener('click', function () {
+        const idx = getNextAvailableIndex();
         const row = document.createElement('div');
-        row.className = 'package-row mb-3';
+        row.className = 'product-row mb-3';
         row.dataset.index = idx;
+
+        // Calculate display number based on current product rows
+        const currentRows = document.querySelectorAll('.product-row');
+        const displayNumber = currentRows.length;
 
         row.innerHTML = `
             <div class="row g-2 align-items-end">
                 <div class="col-md-4">
-                    <label class="form-label">Package ${idx + 1} *</label>
-                    <select class="form-select package-select" name="products[${idx}][product_id]" data-index="${idx}" required>
-                        <option value="">Select a package...</option>
+                    <label class="form-label">Product ${displayNumber} *</label>
+                    <select class="form-select product-select" name="products[${idx}][product_id]" data-index="${idx}" required>
+                        <option value="">Select a product...</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -537,91 +549,119 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 <div class="col-md-1">
                     <label class="form-label">Amount</label>
-                    <div class="package-amount" data-index="${idx}">৳ 0</div>
+                    <div class="product-amount" data-index="${idx}">৳ 0</div>
                 </div>
                 <div class="col-md-1">
                     <label class="form-label">&nbsp;</label>
-                    <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-package-btn">
+                    <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-product-btn">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>`;
 
-        document.getElementById('packagesContainer').appendChild(row);
-        const select = row.querySelector('.package-select');
-        select.innerHTML = '<option value="">Select a package...</option>' + packageOptionsTemplate.innerHTML;
-        updatePackageOptions();
+        document.getElementById('productsContainer').appendChild(row);
+        const select = row.querySelector('.product-select');
+        select.innerHTML = '<option value="">Select a product...</option>' + productOptionsTemplate.innerHTML;
+        updateProductOptions();
 
         // Add event listeners for the new row
         select.addEventListener('change', function() {
-            updateSelectedPackages();
+            updateSelectedProducts();
             autoFillMonthlyPrice(idx);
-            calculatePackageAmount(idx);
+            calculateProductAmount(idx);
             
-            // Check for existing packages when selection changes
+            // Check for existing products when selection changes
             const customerId = document.getElementById('customerId').value;
             if (customerId && this.value) {
-                checkExistingPackages(customerId, this.value, idx);
+                checkExistingProducts(customerId, this.value, idx);
             }
             
             updateSubmitButton();
         });
         
         row.querySelector('.monthly-price').addEventListener('input', function() {
-            calculatePackageAmount(idx);
+            calculateProductAmount(idx);
             updateSubmitButton();
         });
         
         row.querySelector('.billing-months').addEventListener('change', function() {
-            calculatePackageAmount(idx);
+            calculateProductAmount(idx);
             updateSubmitButton();
         });
         
-        row.querySelector('.remove-package-btn').addEventListener('click', function() {
-            removePackage(idx);
+        row.querySelector('.remove-product-btn').addEventListener('click', function() {
+            removeProduct(idx);
         });
 
         // Add summary row
         const summary = document.createElement('div');
         summary.className = 'summary-row';
-        summary.id = `packageSummary${idx}`;
-        summary.innerHTML = `<span>Package ${idx + 1}:</span><span>৳ 0</span>`;
+        summary.id = `productSummary${idx}`;
+        summary.innerHTML = `<span>Product ${displayNumber}:</span><span>৳ 0</span>`;
         document.getElementById('summaryDetails').appendChild(summary);
 
-        updateRemoveButtons();
+        // Update all labels and summaries to be sequential
+        updateAllProductLabels();
         updateSubmitButton();
     });
 
-    // Remove Package
-    function removePackage(idx) {
-        const packageRow = document.querySelector(`.package-row[data-index="${idx}"]`);
-        const packageSelect = packageRow?.querySelector('.package-select');
+    // Remove Product
+    function removeProduct(idx) {
+        const productRow = document.querySelector(`.product-row[data-index="${idx}"]`);
+        const productSelect = productRow?.querySelector('.product-select');
         
-        if (packageSelect && packageSelect.value) {
-            selectedPackages.delete(packageSelect.value);
+        if (productSelect && productSelect.value) {
+            selectedProducts.delete(productSelect.value);
         }
         
-        document.querySelector(`.package-row[data-index="${idx}"]`)?.remove();
-        document.getElementById(`packageSummary${idx}`)?.remove();
-        delete packageAmounts[idx];
-        updateSelectedPackages();
+        document.querySelector(`.product-row[data-index="${idx}"]`)?.remove();
+        document.getElementById(`productSummary${idx}`)?.remove();
+        delete productAmounts[idx];
+        
+        // Add the index back to available indexes for reuse
+        if (idx > 0) { // Don't add index 0 (first product) to available indexes
+            availableIndexes.push(idx);
+            availableIndexes.sort((a, b) => a - b); // Keep sorted for consistent reuse
+        }
+        
+        updateSelectedProducts();
         calculateTotal();
-        updateRemoveButtons();
+        
+        // Update all labels and summaries to be sequential
+        updateAllProductLabels();
         updateSubmitButton();
     }
 
-    function updateRemoveButtons() {
-        const btns = document.querySelectorAll('.remove-package-btn');
-        btns.forEach(b => b.disabled = btns.length <= 1);
+    // Update all product labels and summaries to be sequential
+    function updateAllProductLabels() {
+        const productRows = document.querySelectorAll('.product-row');
+        
+        productRows.forEach((row, index) => {
+            const displayNumber = index + 1; // Sequential numbering (1, 2, 3...)
+            const idx = row.dataset.index;
+            
+            // Update the label
+            const label = row.querySelector('.form-label');
+            if (label) {
+                label.textContent = `Product ${displayNumber} *`;
+            }
+            
+            // Update the summary row
+            const summaryRow = document.getElementById(`productSummary${idx}`);
+            if (summaryRow) {
+                const currentAmount = productAmounts[idx] || 0;
+                summaryRow.innerHTML = `<span>Product ${displayNumber}:</span><span>৳ ${currentAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+            }
+        });
     }
 
-    // Unique Package Selection
-    function updatePackageOptions() {
-        document.querySelectorAll('.package-select').forEach(sel => {
+    // Unique Product Selection
+    function updateProductOptions() {
+        document.querySelectorAll('.product-select').forEach(sel => {
             const cur = sel.value;
-            sel.innerHTML = '<option value="">Select a package...</option>' + packageOptionsTemplate.innerHTML;
+            sel.innerHTML = '<option value="">Select a product...</option>' + productOptionsTemplate.innerHTML;
             Array.from(sel.options).forEach(opt => {
-                if (opt.value && selectedPackages.has(opt.value) && opt.value !== cur) {
+                if (opt.value && selectedProducts.has(opt.value) && opt.value !== cur) {
                     opt.disabled = true;
                     opt.innerHTML += ' (already selected)';
                 }
@@ -632,19 +672,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function updateSelectedPackages() {
-        selectedPackages.clear();
-        document.querySelectorAll('.package-select').forEach(s => {
+    function updateSelectedProducts() {
+        selectedProducts.clear();
+        document.querySelectorAll('.product-select').forEach(s => {
             if (s.value && s.value !== '') {
-                selectedPackages.add(s.value);
+                selectedProducts.add(s.value);
             }
         });
-        updatePackageOptions();
+        updateProductOptions();
     }
 
-    // Auto-fill Monthly Price when package is selected
+    // Auto-fill Monthly Price when product is selected
     function autoFillMonthlyPrice(idx) {
-        const sel = document.querySelector(`.package-select[data-index="${idx}"]`);
+        const sel = document.querySelector(`.product-select[data-index="${idx}"]`);
         const monthlyPriceInput = document.querySelector(`.monthly-price[data-index="${idx}"]`);
         
         const price = sel.selectedOptions[0]?.dataset.price || 0;
@@ -655,42 +695,51 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Amount Calculation (monthly_price * billing_months)
-    function calculatePackageAmount(idx) {
+    function calculateProductAmount(idx) {
         const monthlyPriceInput = document.querySelector(`.monthly-price[data-index="${idx}"]`);
         const months = document.querySelector(`.billing-months[data-index="${idx}"]`).value;
-        const amtEl = document.querySelector(`.package-amount[data-index="${idx}"]`);
-        const sumEl = document.getElementById(`packageSummary${idx}`);
+        const amtEl = document.querySelector(`.product-amount[data-index="${idx}"]`);
+        const sumEl = document.getElementById(`productSummary${idx}`);
 
         const monthlyPrice = parseFloat(monthlyPriceInput.value) || 0;
         const total = monthlyPrice * months;
 
-        packageAmounts[idx] = total;
+        productAmounts[idx] = total;
         amtEl.textContent = `৳ ${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        if (sumEl) sumEl.innerHTML = `<span>Package ${+idx + 1}:</span><span>৳ ${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+        
+        // Update summary with correct sequential number
+        const productRows = Array.from(document.querySelectorAll('.product-row'));
+        const rowIndex = productRows.findIndex(row => row.dataset.index == idx);
+        const displayNumber = rowIndex + 1;
+        
+        if (sumEl) {
+            sumEl.innerHTML = `<span>Product ${displayNumber}:</span><span>৳ ${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+        }
+        
         calculateTotal();
     }
 
     function calculateTotal() {
-        const tot = Object.values(packageAmounts).reduce((a, b) => a + b, 0);
+        const tot = Object.values(productAmounts).reduce((a, b) => a + b, 0);
         document.getElementById('totalAmount').textContent = `৳ ${tot.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     }
 
-    // Check for existing packages function
-    function checkExistingPackages(customerId, packageId, index) {
-        if (!customerId || !packageId) return Promise.resolve(true);
+    // Check for existing products function
+    function checkExistingProducts(customerId, productId, index) {
+        if (!customerId || !productId) return Promise.resolve(true);
         
-        return fetch(`/admin/customer-to-products/check-existing?customer_id=${customerId}&package_id=${packageId}`)
+        return fetch(`/admin/customer-to-products/check-existing?customer_id=${customerId}&product_id=${productId}`)
             .then(response => response.json())
             .then(data => {
-                const packageSelect = document.querySelector(`.package-select[data-index="${index}"]`);
-                const packageRow = packageSelect.closest('.package-row');
-                let warningElement = packageRow.querySelector('.package-warning');
+                const productSelect = document.querySelector(`.product-select[data-index="${index}"]`);
+                const productRow = productSelect.closest('.product-row');
+                let warningElement = productRow.querySelector('.product-warning');
                 
                 if (data.exists) {
                     if (!warningElement) {
                         warningElement = document.createElement('div');
-                        warningElement.className = 'package-warning alert alert-warning mt-2';
-                        packageRow.appendChild(warningElement);
+                        warningElement.className = 'product-warning alert alert-warning mt-2';
+                        productRow.appendChild(warningElement);
                     }
                     warningElement.innerHTML = `
                         <i class="fas fa-exclamation-triangle me-1"></i>
@@ -699,25 +748,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     warningElement.style.display = 'block';
                     
                     // Add error styling to the select
-                    packageSelect.classList.add('is-invalid');
+                    productSelect.classList.add('is-invalid');
                     return false;
                 } else {
                     if (warningElement) {
                         warningElement.style.display = 'none';
                     }
                     // Remove error styling
-                    packageSelect.classList.remove('is-invalid');
+                    productSelect.classList.remove('is-invalid');
                     return true;
                 }
             })
             .catch(error => {
-                console.error('Error checking existing packages:', error);
+                console.error('Error checking existing products:', error);
                 return true;
             });
     }
 
-    // Enhanced form validation with duplicate package checking
-    document.getElementById('assignPackageForm').addEventListener('submit', function(e) {
+    // Enhanced form validation with duplicate product checking
+    document.getElementById('assignProductForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         if (!customerIdInput.value) {
@@ -725,18 +774,18 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         
-        const selects = document.querySelectorAll('.package-select');
+        const selects = document.querySelectorAll('.product-select');
         const filled = Array.from(selects).filter(s => s.value && s.value !== '');
         
         if (filled.length === 0) {
-            alert('Please select at least one package.');
+            alert('Please select at least one product.');
             return;
         }
         
         // Check for duplicates in current selection
         const selectedValues = filled.map(s => s.value);
         if (new Set(selectedValues).size !== selectedValues.length) {
-            alert('You cannot assign the same package twice.');
+            alert('You cannot assign the same product twice.');
             return;
         }
         
@@ -750,49 +799,49 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         
-        // Check for existing packages with the customer
+        // Check for existing products with the customer
         const customerId = customerIdInput.value;
         const checkPromises = filled.map(select => {
-            return checkExistingPackages(customerId, select.value, select.dataset.index);
+            return checkExistingProducts(customerId, select.value, select.dataset.index);
         });
         
         // Show loading state
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Checking Packages...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Checking Products...';
         
         Promise.all(checkPromises).then(results => {
             const allValid = results.every(valid => valid);
             
             if (!allValid) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Assign Packages';
-                alert('Cannot assign packages. Please check the warning messages and select different packages.');
+                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Assign Products';
+                alert('Cannot assign products. Please check the warning messages and select different products.');
                 return;
             }
             
             // If all valid, proceed with form submission
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Assigning Packages...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Assigning Products...';
             
             // Submit the form using standard submit to ensure CSRF token is included
-            document.getElementById('assignPackageForm').submit();
+            document.getElementById('assignProductForm').submit();
         });
     });
 
-    // Initial event listeners for first package
-    const initialSelect = document.querySelector('.package-select[data-index="0"]');
+    // Initial event listeners for first product
+    const initialSelect = document.querySelector('.product-select[data-index="0"]');
     const initialMonthlyPrice = document.querySelector('.monthly-price[data-index="0"]');
     const initialMonths = document.querySelector('.billing-months[data-index="0"]');
     
     if (initialSelect) {
         initialSelect.addEventListener('change', function() {
-            updateSelectedPackages();
+            updateSelectedProducts();
             autoFillMonthlyPrice(0);
-            calculatePackageAmount(0);
+            calculateProductAmount(0);
             
-            // Check for existing packages
+            // Check for existing products
             const customerId = document.getElementById('customerId').value;
             if (customerId && this.value) {
-                checkExistingPackages(customerId, this.value, 0);
+                checkExistingProducts(customerId, this.value, 0);
             }
             
             updateSubmitButton();
@@ -801,14 +850,14 @@ document.addEventListener('DOMContentLoaded', function () {
     
     if (initialMonthlyPrice) {
         initialMonthlyPrice.addEventListener('input', function() {
-            calculatePackageAmount(0);
+            calculateProductAmount(0);
             updateSubmitButton();
         });
     }
     
     if (initialMonths) {
         initialMonths.addEventListener('change', function() {
-            calculatePackageAmount(0);
+            calculateProductAmount(0);
             updateSubmitButton();
         });
     }
@@ -817,10 +866,10 @@ document.addEventListener('DOMContentLoaded', function () {
     customerIdInput.addEventListener('change', updateSubmitButton);
 
     // Initial setup
-    updateSelectedPackages();
+    updateSelectedProducts();
     if (initialSelect && initialSelect.value) {
         autoFillMonthlyPrice(0);
-        calculatePackageAmount(0);
+        calculateProductAmount(0);
     }
     updateSubmitButton();
 });
@@ -841,11 +890,11 @@ function selectCustomer(id, name, phone, email, custId) {
     document.getElementById('customerResults').style.display = 'none';
     document.getElementById('selectedCustomer').style.display = 'block';
     
-    // Check all selected packages for this customer
-    document.querySelectorAll('.package-select').forEach(select => {
+    // Check all selected products for this customer
+    document.querySelectorAll('.product-select').forEach(select => {
         const index = select.dataset.index;
         if (select.value) {
-            checkExistingPackages(id, select.value, index);
+            checkExistingProducts(id, select.value, index);
         }
     });
     
@@ -860,13 +909,13 @@ function clearCustomerSelection() {
     document.getElementById('customerSearch').value = '';
     document.getElementById('customerResults').style.display = 'none';
     
-    // Clear all package warnings
-    document.querySelectorAll('.package-warning').forEach(warning => {
+    // Clear all product warnings
+    document.querySelectorAll('.product-warning').forEach(warning => {
         warning.style.display = 'none';
     });
     
     // Remove error styling from all selects
-    document.querySelectorAll('.package-select').forEach(select => {
+    document.querySelectorAll('.product-select').forEach(select => {
         select.classList.remove('is-invalid');
     });
     

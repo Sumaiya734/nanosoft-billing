@@ -83,9 +83,9 @@ class CustomerProductController extends Controller
                 ->orderBy('name')
                 ->get(['c_id', 'name', 'phone', 'email', 'customer_id', 'address']);
             
-            $packages = Product::orderBy('product_type_id')->orderBy('monthly_price')->get();
+            $products = Product::orderBy('product_type_id')->orderBy('monthly_price')->get();
             
-            return view('admin.customer-to-products.assign', compact('customers', 'packages'));
+            return view('admin.customer-to-products.assign', compact('customers', 'products'));
         } catch (\Exception $e) {
             Log::error('Error loading assign product form: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to load assignment form.');
@@ -93,155 +93,150 @@ class CustomerProductController extends Controller
     }
 
     /** 💾 Store assigned products  */
+    public function store(Request $request)
+    {
+        // Log the request for debugging
+        Log::info('Product assignment request received:', $request->all());
 
+        $request->validate([
+            'customer_id' => 'required|exists:customers,c_id',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,p_id',
+            'products.*.billing_cycle_months' => 'required|integer|min:1|max:12',
+            'products.*.assign_date' => 'required|date|before_or_equal:today',
+        ]);
 
-public function store(Request $request)
-{
-    // Log the request for debugging
-    Log::info('Product assignment request received:', $request->all());
+        $customerId = $request->customer_id;
+        $products = $request->products;
 
-    $request->validate([
-        'customer_id' => 'required|exists:customers,c_id',
-        'products' => 'required|array|min:1',
-        'products.*.product_id' => 'required|exists:products,p_id',
-        'products.*.billing_cycle_months' => 'required|integer|min:1|max:12',
-        'products.*.assign_date' => 'required|date|before_or_equal:today',
-    ]);
+        try {
+            DB::beginTransaction();
 
-    $customerId = $request->customer_id;
-    $products = $request->products;
+            // Check for duplicate products in the same request
+            $productIds = collect($products)->pluck('product_id');
+            if ($productIds->count() !== $productIds->unique()->count()) {
+                DB::rollBack();
+                return back()->with('error', 'You cannot assign the same product multiple times in the same request.')
+                            ->withInput();
+            }
 
-    try {
-        DB::beginTransaction();
+            $assignedProducts = [];
+            $errors = [];
 
-        // Check for duplicate products in the same request
-        $productIds = collect($products)->pluck('product_id');
-        if ($productIds->count() !== $productIds->unique()->count()) {
+            foreach ($products as $index => $productData) {
+                $productId = $productData['product_id'];
+                
+                // Check if product is already assigned to this customer (active or inactive)
+                $existingProduct = CustomerProduct::where('c_id', $customerId)
+                    ->where('p_id', $productId)
+                    ->first();
+
+                if ($existingProduct) {
+                    $productName = Product::find($productId)->name ?? 'Unknown product';
+                    
+                    // Check if the existing product is active
+                    if ($existingProduct->is_active && $existingProduct->status === 'active') {
+                        $errors[] = "Product '{$productName}' is already actively assigned to this customer. Please choose a different product.";
+                    } else {
+                        $errors[] = "Product '{$productName}' was previously assigned to this customer. Please choose a different product.";
+                    }
+                    continue;
+                }
+
+                // Create the product assignment
+                $customerProduct = CustomerProduct::create([
+                    'c_id' => $customerId,
+                    'p_id' => $productId,
+                    'assign_date' => $productData['assign_date'],
+                    'billing_cycle_months' => $productData['billing_cycle_months'],
+                    'status' => 'active',
+                    'is_active' => 1,
+                ]);
+
+                $assignedProducts[] = $customerProduct;
+                Log::info("Product assigned successfully:", [
+                    'customer_id' => $customerId,
+                    'product_id' => $productId,
+                    'cp_id' => $customerProduct->cp_id
+                ]);
+            }
+
+            if (!empty($errors)) {
+                DB::rollBack();
+                return back()
+                    ->with('error', implode(' ', $errors))
+                    ->withInput();
+            }
+
+            if (empty($assignedProducts)) {
+                DB::rollBack();
+                return back()
+                    ->with('error', 'No products were assigned. Please check your selection.')
+                    ->withInput();
+            }
+
+            DB::commit();
+
+            $successMessage = count($assignedProducts) . ' product(s) assigned successfully!';
+            return redirect()->route('admin.customer-to-products.index')
+                ->with('success', $successMessage);
+
+        } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'You cannot assign the same product multiple times in the same request.')
-                        ->withInput();
-        }
-
-        $assignedProducts = [];
-        $errors = [];
-
-        foreach ($products as $index => $productData) {
-            $productId = $productData['product_id'];
+            Log::error('Product assignment failed: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
-            // Check if product is already assigned to this customer (active or inactive)
+            return back()
+                ->with('error', 'Failed to assign products: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /** 🔍 Check if product already exists for customer */
+    public function checkExistingProduct(Request $request)
+    {
+        $request->validate([
+            'customer_id' => 'required|exists:customers,c_id',
+            'product_id' => 'required|exists:products,p_id',
+        ]);
+
+        try {
+            $customerId = $request->customer_id;
+            $productId = $request->product_id;
+
             $existingProduct = CustomerProduct::where('c_id', $customerId)
                 ->where('p_id', $productId)
                 ->first();
 
+            $productName = Product::find($productId)->name ?? 'Unknown product';
+
             if ($existingProduct) {
-                $productName = Product::find($productId)->name ?? 'Unknown product';
-                
-                // Check if the existing product is active
                 if ($existingProduct->is_active && $existingProduct->status === 'active') {
-                    $errors[] = "Product '{$productName}' is already actively assigned to this customer. Please choose a different product.";
+                    return response()->json([
+                        'exists' => true,
+                        'message' => 'This customer already has the "' . $productName . '" product actively assigned. Please choose a different product.'
+                    ]);
                 } else {
-                    $errors[] = "Product '{$productName}' was previously assigned to this customer. Please choose a different product.";
+                    return response()->json([
+                        'exists' => true,
+                        'message' => 'This customer previously had the "' . $productName . '" product. Please choose a different product.'
+                    ]);
                 }
-                continue;
             }
 
-            // Create the product assignment
-            $customerProduct = CustomerProduct::create([
-                'c_id' => $customerId,
-                'p_id' => $productId,
-                'assign_date' => $productData['assign_date'],
-                'billing_cycle_months' => $productData['billing_cycle_months'],
-                'status' => 'active',
-                'is_active' => 1,
+            return response()->json([
+                'exists' => false,
+                'message' => 'Product is available for assignment.'
             ]);
 
-            $assignedProducts[] = $customerProduct;
-            Log::info("Product assigned successfully:", [
-                'customer_id' => $customerId,
-                'product_id' => $productId,
-                'cp_id' => $customerProduct->cp_id
-            ]);
+        } catch (\Exception $e) {
+            Log::error('Error checking existing product: ' . $e->getMessage());
+            return response()->json([
+                'exists' => false,
+                'message' => 'Error checking product availability.'
+            ], 500);
         }
-
-        if (!empty($errors)) {
-            DB::rollBack();
-            return back()
-                ->with('error', implode(' ', $errors))
-                ->withInput();
-        }
-
-        if (empty($assignedProducts)) {
-            DB::rollBack();
-            return back()
-                ->with('error', 'No products were assigned. Please check your selection.')
-                ->withInput();
-        }
-
-        DB::commit();
-
-        $successMessage = count($assignedProducts) . ' product(s) assigned successfully!';
-        return redirect()->route('admin.customer-to-products.index')
-            ->with('success', $successMessage);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Product assignment failed: ' . $e->getMessage());
-        Log::error('Stack trace: ' . $e->getTraceAsString());
-        
-        return back()
-            ->with('error', 'Failed to assign products: ' . $e->getMessage())
-            ->withInput();
     }
-}
-
-
-    // app/Http/Controllers/Admin/CustomerProductController.php
-
-/** 🔍 Check if product already exists for customer */
-public function checkExistingProduct(Request $request)
-{
-    $request->validate([
-        'customer_id' => 'required|exists:customers,c_id',
-        'product_id' => 'required|exists:products,p_id',
-    ]);
-
-    try {
-        $customerId = $request->customer_id;
-        $productId = $request->product_id;
-
-        $existingProduct = CustomerProduct::where('c_id', $customerId)
-            ->where('p_id', $productId)
-            ->first();
-
-        $productName = Product::find($productId)->name ?? 'Unknown product';
-
-        if ($existingProduct) {
-            if ($existingProduct->is_active && $existingProduct->status === 'active') {
-                return response()->json([
-                    'exists' => true,
-                    'message' => 'This customer already has the "' . $productName . '" product actively assigned. Please choose a different product.'
-                ]);
-            } else {
-                return response()->json([
-                    'exists' => true,
-                    'message' => 'This customer previously had the "' . $productName . '" product. Please choose a different product.'
-                ]);
-            }
-        }
-
-        return response()->json([
-            'exists' => false,
-            'message' => 'Product is available for assignment.'
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Error checking existing product: ' . $e->getMessage());
-        return response()->json([
-            'exists' => false,
-            'message' => 'Error checking product availability.'
-        ], 500);
-    }
-}
 
     /** ✏️ Edit existing product */
     public function edit($id)
