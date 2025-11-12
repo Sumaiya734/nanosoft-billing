@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') - NetBill BD</title>
+    <title>@yield('title') - Nanosft-Billing</title>
         <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Bootstrap CSS -->
@@ -222,8 +222,9 @@
                 <i class="fas fa-bars"></i>
             </button>
             <a class="navbar-brand" href="{{ route('admin.dashboard') }}">
-                <i class="fas fa-wifi me-2"></i>NetBill BD Admin
-            </a>
+            <i class="fas fa-money-bill-wave"></i>
+            Nanosoft-Billing
+        </a>
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text text-white me-3">
                     <i class="fas fa-user-circle me-1"></i>Welcome, {{ Auth::user()->name }}
