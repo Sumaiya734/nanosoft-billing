@@ -7,11 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\CustomerProduct;
+<<<<<<< HEAD
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+=======
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 
 class CustomerProductController extends Controller
 {
@@ -106,7 +112,10 @@ class CustomerProductController extends Controller
             'products.*.product_id' => 'required|exists:products,p_id',
             'products.*.billing_cycle_months' => 'required|integer|min:1|max:12',
             'products.*.assign_date' => 'required|date|before_or_equal:today',
+<<<<<<< HEAD
             'products.*.due_date_day' => 'required|integer|min:1|max:28',
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
         ]);
 
         $customerId = $request->customer_id;
@@ -125,7 +134,10 @@ class CustomerProductController extends Controller
 
             $assignedProducts = [];
             $errors = [];
+<<<<<<< HEAD
             $invoicesGenerated = [];
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 
             foreach ($products as $index => $productData) {
                 $productId = $productData['product_id'];
@@ -147,6 +159,7 @@ class CustomerProductController extends Controller
                     continue;
                 }
 
+<<<<<<< HEAD
                 // Calculate due_date based on assign_date and due_date_day
                 $assignDate = $productData['assign_date'];
                 $dueDateDay = (int) $productData['due_date_day'];
@@ -157,13 +170,20 @@ class CustomerProductController extends Controller
                 $dueDate = $assignDateCarbon->copy()->addMonths($billingCycleMonths);
                 $dueDate->day($dueDateDay);
                 
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                 // Create the product assignment
                 $customerProduct = CustomerProduct::create([
                     'c_id' => $customerId,
                     'p_id' => $productId,
+<<<<<<< HEAD
                     'assign_date' => $assignDate,
                     'billing_cycle_months' => $billingCycleMonths,
                     'due_date' => $dueDate,
+=======
+                    'assign_date' => $productData['assign_date'],
+                    'billing_cycle_months' => $productData['billing_cycle_months'],
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                     'status' => 'active',
                     'is_active' => 1,
                 ]);
@@ -174,10 +194,13 @@ class CustomerProductController extends Controller
                     'product_id' => $productId,
                     'cp_id' => $customerProduct->cp_id
                 ]);
+<<<<<<< HEAD
                 
                 // Automatically generate invoices for current and future billing periods
                 $generatedInvoices = $this->generateAutomaticInvoices($customerProduct, $customerId);
                 $invoicesGenerated = array_merge($invoicesGenerated, $generatedInvoices);
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             }
 
             if (!empty($errors)) {
@@ -197,10 +220,13 @@ class CustomerProductController extends Controller
             DB::commit();
 
             $successMessage = count($assignedProducts) . ' product(s) assigned successfully!';
+<<<<<<< HEAD
             if (!empty($invoicesGenerated)) {
                 $successMessage .= ' ' . count($invoicesGenerated) . ' invoice(s) automatically generated.';
             }
             
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             return redirect()->route('admin.customer-to-products.index')
                 ->with('success', $successMessage);
 
@@ -215,6 +241,7 @@ class CustomerProductController extends Controller
         }
     }
 
+<<<<<<< HEAD
     /** 
      * Automatically generate invoices for a customer product
      * This method generates invoices for current and future billing periods
@@ -431,6 +458,53 @@ public function checkExistingProduct(Request $request)
         ], 500);
     }
 }
+=======
+    /** 🔍 Check if product already exists for customer */
+    public function checkExistingProduct(Request $request)
+    {
+        $request->validate([
+            'customer_id' => 'required|exists:customers,c_id',
+            'product_id' => 'required|exists:products,p_id',
+        ]);
+
+        try {
+            $customerId = $request->customer_id;
+            $productId = $request->product_id;
+
+            $existingProduct = CustomerProduct::where('c_id', $customerId)
+                ->where('p_id', $productId)
+                ->first();
+
+            $productName = Product::find($productId)->name ?? 'Unknown product';
+
+            if ($existingProduct) {
+                if ($existingProduct->is_active && $existingProduct->status === 'active') {
+                    return response()->json([
+                        'exists' => true,
+                        'message' => 'This customer already has the "' . $productName . '" product actively assigned. Please choose a different product.'
+                    ]);
+                } else {
+                    return response()->json([
+                        'exists' => true,
+                        'message' => 'This customer previously had the "' . $productName . '" product. Please choose a different product.'
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'exists' => false,
+                'message' => 'Product is available for assignment.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error checking existing product: ' . $e->getMessage());
+            return response()->json([
+                'exists' => false,
+                'message' => 'Error checking product availability.'
+            ], 500);
+        }
+    }
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 
     /** ✏️ Edit existing product */
     public function edit($id)
@@ -462,8 +536,11 @@ public function checkExistingProduct(Request $request)
     public function update(Request $request, $id)
     {
         $request->validate([
+<<<<<<< HEAD
             'assign_date' => 'required|date',
             'due_date_day' => 'required|integer|min:1|max:28',
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             'billing_cycle_months' => 'required|integer|min:1|max:12',
             'status' => 'required|in:active,pending,expired',
         ]);
@@ -476,6 +553,7 @@ public function checkExistingProduct(Request $request)
                     ->with('error', 'Product assignment not found.');
             }
 
+<<<<<<< HEAD
             // Calculate due_date based on assign_date and due_date_day
             $assignDate = $request->assign_date;
             $dueDateDay = (int) $request->due_date_day;
@@ -490,6 +568,10 @@ public function checkExistingProduct(Request $request)
                 'assign_date' => $assignDate,
                 'billing_cycle_months' => $billingCycleMonths,
                 'due_date' => $dueDate,
+=======
+            $customerProduct->update([
+                'billing_cycle_months' => $request->billing_cycle_months,
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                 'status' => $request->status,
                 'is_active' => $request->status === 'active' ? 1 : 0,
             ]);
@@ -603,6 +685,7 @@ public function checkExistingProduct(Request $request)
             return response()->json([], 500);
         }
     }
+<<<<<<< HEAD
 
     /** ➕ Store new customer via AJAX */
     public function storeCustomer(Request $request)
@@ -672,4 +755,6 @@ public function checkExistingProduct(Request $request)
             return response()->json([], 500);
         }
     }
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 }

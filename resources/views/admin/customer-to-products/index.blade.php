@@ -192,7 +192,11 @@
                                     </td>
                                     
                                     <td class="price-cell">
+<<<<<<< HEAD
                                         <div><span class="currency">৳</span> {{ number_format($cp->product_price ?? 0, 2) }}</div>
+=======
+                                        <div><span class="currency">৳</span> {{ number_format(optional($cp->product)->monthly_price ?? 0, 2) }}</div>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                     </td>
                                     
                                     <td class="text-center">
@@ -207,6 +211,7 @@
                                     <!-- FIXED: Simplified total amount display using model attribute -->
                                     <td class="price-cell">
                                         <div class="total-price">
+<<<<<<< HEAD
                                             <strong class="text-dark">৳ {{ number_format($cp->total_amount, 2) }}</strong>
                                             <div class="text-muted small">
                                                 (৳{{ number_format($cp->product_price ?? 0, 2) }} × {{ $cp->billing_cycle_months }})
@@ -228,6 +233,10 @@
                                                 @endphp
                                                 <span class="text-muted">{{ $displayDate->format('M d, Y') }}*</span>
                                             @endif
+=======
+                                            <span class="currency">৳</span> 
+                                            {{ number_format((optional($cp->product)->monthly_price ?? 0) * $cp->billing_cycle_months, 2) }}
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                         </div>
                                     </td>
                                     
@@ -256,6 +265,10 @@
                                     <td class="text-center">
                                         <div class="btn-group d-flex justify-content-center gap-1">
                                             @if($cp->cp_id)
+<<<<<<< HEAD
+=======
+                                                <!-- Edit Button -->
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                                 <a href="{{ route('admin.customer-to-products.edit', $cp->cp_id) }}"
                                                    class="btn btn-sm btn-outline-primary"
                                                    title="Edit product">
@@ -264,10 +277,21 @@
 
                                                 @php
                                                     $isActive = $cp->status === 'active';
+<<<<<<< HEAD
+=======
+                                                    $newStatus = $isActive ? 'expired' : 'active';
+                                                    $confirmText = $isActive
+                                                        ? 'Are you sure you want to pause this product?'
+                                                        : 'Are you sure you want to activate this product?';
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                                     $buttonIcon = $isActive ? 'fa-pause' : 'fa-play';
                                                     $buttonTitle = $isActive ? 'Pause product' : 'Activate product';
                                                 @endphp
 
+<<<<<<< HEAD
+=======
+                                                <!-- Toggle Status Button -->
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                                 <form action="{{ route('admin.customer-to-products.toggle-status', $cp->cp_id) }}" 
                                                       method="POST" 
                                                       onsubmit="return confirm('Are you sure?');">
@@ -279,9 +303,16 @@
                                                     </button>
                                                 </form>
 
+<<<<<<< HEAD
                                                 <form action="{{ route('admin.customer-to-products.destroy', $cp->cp_id) }}" 
                                                       method="POST" 
                                                       onsubmit="return confirm('Are you sure you want to remove this product?');">
+=======
+                                                <!-- Delete Button -->
+                                                <form action="{{ route('admin.customer-to-products.destroy', $cp->cp_id) }}" 
+                                                      method="POST" 
+                                                      onsubmit="return confirm('Are you sure you want to remove this product? This cannot be undone.');">
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete product">
@@ -420,6 +451,7 @@
         font-size: 0.85rem;
         color: #7f8c8d;
     }
+<<<<<<< HEAD
     .due-day {
         font-weight: 600;
         color: #27ae60;
@@ -429,6 +461,8 @@
         font-size: 0.65rem;
         top: -0.3em;
     }
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 </style>
 
 <script>
@@ -443,11 +477,22 @@
         document.getElementById('searchForm').submit();
     }
     
+<<<<<<< HEAD
     // Auto-submit on filter change
     document.addEventListener('DOMContentLoaded', function() {
         ['status', 'product_type'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', () => document.getElementById('searchForm').submit());
+=======
+    // Auto-submit form when filters change
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('status').addEventListener('change', function() {
+            document.getElementById('searchForm').submit();
+        });
+        
+        document.getElementById('product_type').addEventListener('change', function() {
+            document.getElementById('searchForm').submit();
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
         });
     });
 </script>

@@ -11,6 +11,12 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\CustomerProduct;
 use App\Models\Payment;
+<<<<<<< HEAD
+=======
+use App\Models\product;
+use App\Models\Customerproduct;
+use Carbon\Carbon;
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 
 class MonthlyBillController extends Controller
 {
@@ -465,8 +471,14 @@ class MonthlyBillController extends Controller
         // Calculate total product amount from active products that are due this month
         $productAmount = $customer->total_product_amount ?? 0;
 
+<<<<<<< HEAD
         // With VAT and service charges removed, total amount is just product amount plus previous due
         $totalAmount = $productAmount;
+=======
+        $subtotal = $productAmount + $serviceCharge;
+        $vatAmount = $subtotal * ($vatPercentage / 100);
+        $totalAmount = $subtotal + $vatAmount;
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 
         // Get previous due amount from unpaid invoices
         $previousDue = Invoice::where('c_id', $customer->c_id)

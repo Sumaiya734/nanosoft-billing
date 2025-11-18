@@ -23,7 +23,11 @@ class BillingController extends Controller
     public function allInvoices()
     {
         try {
+<<<<<<< HEAD
             $invoices = Invoice::with(['customerProduct.customer', 'customerProduct.product', 'invoiceproducts'])
+=======
+            $invoices = Invoice::with(['customer', 'invoiceproducts'])
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                 ->orderBy('issue_date', 'desc')
                 ->paginate(20);
 
@@ -93,8 +97,15 @@ class BillingController extends Controller
             $regularproductAmount = $this->calculateproductAmount($request->regular_products);
             $specialproductAmount = $this->calculateproductAmount($request->special_products ?? []);
             
+<<<<<<< HEAD
             // Calculate total without service charge or VAT
             $subtotal = $regularproductAmount + $specialproductAmount;
+=======
+            $serviceCharge = 50.00;
+            $vatPercentage = 5.00;
+            $subtotal = $regularproductAmount + $specialproductAmount + $serviceCharge;
+            $vatAmount = $subtotal * ($vatPercentage / 100);
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             $discountAmount = $subtotal * ($request->discount / 100);
             $totalAmount = $subtotal - $discountAmount;
 
@@ -125,6 +136,7 @@ class BillingController extends Controller
     }
 
     /**
+<<<<<<< HEAD
      * Get monthly billing details
      */
 
@@ -279,6 +291,10 @@ class BillingController extends Controller
     /**
      * Helper method to calculate product amount
      */
+=======
+     * Helper method to calculate product amount
+     */
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
     private function calculateproductAmount($productIds)
     {
         return product::whereIn('p_id', $productIds)->sum('monthly_price');
@@ -327,7 +343,11 @@ class BillingController extends Controller
     public function viewBill($id)
     {
         try {
+<<<<<<< HEAD
             $invoice = Invoice::with(['customerProduct.customer', 'customerProduct.product', 'payments'])
+=======
+            $invoice = Invoice::with(['customer', 'invoiceproducts.product', 'payments'])
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                             ->findOrFail($id);
 
             return view('admin.billing.view-bill', compact('invoice'));
@@ -665,6 +685,7 @@ class BillingController extends Controller
         // Get products that are due this month (filtered by billing cycle)
         $dueProducts = $this->getDueCustomersForMonth($monthDate);
         
+<<<<<<< HEAD
         // Calculate expected revenue from due products
         // Each product amount = monthly_price × billing_cycle_months
         $totalProductAmount = $dueProducts->sum(function($product) {
@@ -674,6 +695,17 @@ class BillingController extends Controller
         // Get unique customers count from invoices via customer_product
         $invoiceData = Invoice::with('customerProduct')
             ->whereYear('issue_date', $monthDate->year)
+=======
+        // Calculate expected revenue from due customers
+        $totalproductAmount = $dueCustomers->sum('monthly_price');
+        $serviceCharge = 50 * $dueCustomers->count();
+        $subtotal = $totalproductAmount + $serviceCharge;
+        $vatAmount = $subtotal * 0.05;
+        $totalAmount = $subtotal + $vatAmount;
+
+        // Get actual payments from invoices for this month
+        $payments = Invoice::whereYear('issue_date', $monthDate->year)
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             ->whereMonth('issue_date', $monthDate->month)
             ->get();
         $uniqueCustomers = $invoiceData->pluck('customerProduct.c_id')->unique()->count();
@@ -732,6 +764,7 @@ class BillingController extends Controller
      */
     private function getDueCustomersForMonth(Carbon $monthDate)
     {
+<<<<<<< HEAD
         // Get all active customer products
         $customerProducts = DB::table('customer_to_products as cp')
             ->join('customers as c', 'cp.c_id', '=', 'c.c_id')
@@ -749,6 +782,35 @@ class BillingController extends Controller
                 'cp.assign_date',
                 'cp.due_date'
             )
+=======
+        $monthStart = $monthDate->copy()->startOfMonth();
+        $monthEnd = $monthDate->copy()->endOfMonth();
+        
+        return Customer::select(
+                'customers.c_id',
+                'customers.name',
+                'customers.customer_id',
+                'products.monthly_price'
+            )
+            ->join('customer_to_products as cp', 'customers.c_id', '=', 'cp.c_id')
+            ->join('products', 'cp.p_id', '=', 'products.p_id')
+            ->where('cp.status', 'active')
+            ->where('cp.is_active', 1)
+            ->where('customers.is_active', 1)
+            ->where(function($query) use ($monthStart, $monthEnd) {
+                // Customers whose billing cycle falls in this month
+                $query->where(function($q) use ($monthStart, $monthEnd) {
+                    $q->whereBetween('cp.due_date', [$monthStart, $monthEnd]);
+                })
+                // Monthly billing customers
+                ->orWhere(function($q) use ($monthEnd) {
+                    $q->where('cp.billing_cycle_months', 1)
+                      ->where('cp.assign_date', '<=', $monthEnd);
+                });
+            })
+            ->groupBy('customers.c_id', 'customers.name', 'customers.customer_id', 'products.monthly_price')
+            ->orderBy('customers.name')
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             ->get();
         
         // Filter products that are due in this specific month based on billing cycle
@@ -913,11 +975,22 @@ class BillingController extends Controller
      */
     private function createCustomerInvoice($customerProduct, Carbon $monthDate)
     {
+<<<<<<< HEAD
         // Calculate product amount based on monthly_price and billing_cycle
         $productAmount = $customerProduct->product->monthly_price * $customerProduct->billing_cycle_months;
         
         // Subtotal and total are the same (no service charge or VAT)
         $totalAmount = $productAmount;
+=======
+        $serviceCharge = 50.00;
+        $vatPercentage = 5.00;
+
+        // Calculate product amount
+        $productAmount = $customer->monthly_price;
+        $subtotal = $productAmount + $serviceCharge;
+        $vatAmount = $subtotal * ($vatPercentage / 100);
+        $totalAmount = $subtotal + $vatAmount;
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 
         $invoice = Invoice::create([
             'invoice_number' => $this->generateInvoiceNumber(),

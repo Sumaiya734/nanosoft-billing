@@ -63,6 +63,7 @@ class Invoice extends Model
         return $this->belongsTo(CustomerProduct::class, 'cp_id', 'cp_id');
     }
 
+<<<<<<< HEAD
     // Backward compatibility: Access customer through customerProduct
     public function customer(): BelongsTo
     {
@@ -86,6 +87,10 @@ class Invoice extends Model
 
     public function invoiceProducts(): HasMany
     {
+=======
+    public function invoiceProducts(): HasMany
+    {
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
         return $this->hasMany(InvoiceProduct::class, 'invoice_id', 'invoice_id');
     }
 

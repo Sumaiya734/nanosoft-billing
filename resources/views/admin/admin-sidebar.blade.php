@@ -45,10 +45,17 @@
 
         <!-- Product Management -->
         <div class="dropdown">
+<<<<<<< HEAD
             <a class="nav-link dropdown-toggle {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="#" data-bs-toggle="collapse" data-bs-target="#productMenu" aria-expanded="{{ request()->routeIs('admin.products.*') ? 'true' : 'false' }}">
                 <i class="fas fa-cube me-2"></i>Product Management
             </a>
             <div class="collapse submenu {{ request()->routeIs('admin.products.*') ? 'show' : '' }}" id="productMenu">
+=======
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#productMenu">
+                <i class="fas fa-cube me-2"></i>Product Management
+            </a>
+            <div class="collapse submenu" id="productMenu">
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                 <a class="dropdown-item {{ request()->routeIs('admin.products.index') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
                     <i class="fas fa-list me-2"></i>All Products
                 </a>
@@ -69,6 +76,10 @@
         </div>
 
         
+<<<<<<< HEAD
+=======
+
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
         <!-- Reports & Analytics -->
         <div class="dropdown">
             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#reportsMenu" aria-expanded="false">

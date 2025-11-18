@@ -11,18 +11,74 @@ use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
+<<<<<<< HEAD
     public function index()
     {
         $products = Product::with('type')
             ->orderBy('created_at', 'desc') // Latest products first
             ->orderBy('p_id', 'desc') // Then by ID descending
+=======
+    public function index(Request $request)
+    {
+        $products = Product::with('type')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('p_id', 'desc')
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             ->get();
         $productTypes = ProductType::all();
         $stats = $this->getProductStats();
 
+<<<<<<< HEAD
         return view('admin.products.index', compact('products', 'stats', 'productTypes'));
     }
 
+=======
+        // Handle duplicate check request
+        if ($request->has('check_duplicate')) {
+            return $this->checkForDuplicates($request);
+        }
+
+        return view('admin.products.index', compact('products', 'stats', 'productTypes'));
+    }
+
+    /**
+     * Check for duplicate products (for real-time validation)
+     */
+    private function checkForDuplicates(Request $request)
+    {
+        $productName = $request->get('check_duplicate');
+
+        $duplicates = [];
+
+        // Check for exact name match
+        $exactMatch = Product::where('name', $productName)->first();
+        if ($exactMatch) {
+            $duplicates['name_exact'] = [
+                'name' => $exactMatch->name,
+                'type' => $exactMatch->type->name ?? 'Unknown',
+                'price' => $exactMatch->monthly_price
+            ];
+        }
+
+        // Check for similar name (case-insensitive)
+        $similarMatch = Product::where(DB::raw('LOWER(name)'), strtolower($productName))
+            ->where('name', '!=', $productName)
+            ->first();
+        if ($similarMatch && !$exactMatch) {
+            $duplicates['name_similar'] = [
+                'name' => $similarMatch->name,
+                'type' => $similarMatch->type->name ?? 'Unknown',
+                'price' => $similarMatch->monthly_price
+            ];
+        }
+
+        return response()->json([
+            'has_duplicates' => !empty($duplicates),
+            'duplicates' => $duplicates
+        ]);
+    }
+
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
     public function create()
     {
         $productTypes = ProductType::all();
@@ -50,7 +106,30 @@ class ProductController extends Controller
         Log::info('Product validation passed', $validatedData);
 
         try {
+<<<<<<< HEAD
             // Remove created_at and updated_at from the data since Laravel handles them automatically
+=======
+            // DUPLICATE CHECK: Check if product with same name already exists
+            $existingProduct = Product::where('name', $validatedData['name'])->first();
+            if ($existingProduct) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A product with this name already exists. Please use a different name.',
+                    'errors' => ['name' => ['Product name already exists.']]
+                ], 422);
+            }
+
+            // DUPLICATE CHECK: Check for similar products (case-insensitive)
+            $similarProduct = Product::where(DB::raw('LOWER(name)'), strtolower($validatedData['name']))->first();
+            if ($similarProduct) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A similar product already exists. Please use a different name.',
+                    'errors' => ['name' => ['Similar product name already exists.']]
+                ], 422);
+            }
+
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             $productData = [
                 'name' => $validatedData['name'],
                 'product_type_id' => $validatedData['product_type_id'],
@@ -137,7 +216,36 @@ class ProductController extends Controller
         try {
             $product = Product::where('p_id', $id)->firstOrFail();
             
+<<<<<<< HEAD
             // Remove updated_at from the data since Laravel handles it automatically
+=======
+            // DUPLICATE CHECK: Check if another product with same name already exists (excluding current product)
+            $existingProduct = Product::where('name', $validatedData['name'])
+                ->where('p_id', '!=', $id)
+                ->first();
+
+            if ($existingProduct) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Another product with this name already exists. Please use a different name.',
+                    'errors' => ['name' => ['Product name already exists.']]
+                ], 422);
+            }
+
+            // DUPLICATE CHECK: Check for similar products (case-insensitive, excluding current)
+            $similarProduct = Product::where(DB::raw('LOWER(name)'), strtolower($validatedData['name']))
+                ->where('p_id', '!=', $id)
+                ->first();
+
+            if ($similarProduct) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A similar product already exists. Please use a different name.',
+                    'errors' => ['name' => ['Similar product name already exists.']]
+                ], 422);
+            }
+
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             $productData = [
                 'name' => $validatedData['name'],
                 'product_type_id' => $validatedData['product_type_id'],
@@ -240,12 +348,23 @@ class ProductController extends Controller
     // Product Type Management
     // -------------------------
 
+<<<<<<< HEAD
     // Update your product type methods in ProductController
     public function productTypes()
     {
         $productTypes = ProductType::withCount('products')->orderBy('name')->get();
         
         // Calculate product counts for each type
+=======
+    public function productTypes()
+    {
+        // Order by created_at DESC so newest types appear first
+        $productTypes = ProductType::withCount('products')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+        
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
         $productCounts = [];
         foreach ($productTypes as $type) {
             $productCounts[$type->name] = $type->products_count;
@@ -256,7 +375,10 @@ class ProductController extends Controller
 
     public function addProductType(Request $request)
     {
+<<<<<<< HEAD
         // Debug the incoming request
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
         Log::info('Add Product Type Request:', [
             'method' => $request->method(),
             'url' => $request->url(),
@@ -272,6 +394,19 @@ class ProductController extends Controller
                 'name' => 'required|string|max:50|unique:product_type,name',
                 'descriptions' => 'nullable|string|max:500',
             ]);
+<<<<<<< HEAD
+=======
+
+            // Additional duplicate check (case-insensitive)
+            $existingType = ProductType::where(DB::raw('LOWER(name)'), strtolower($validatedData['name']))->first();
+            if ($existingType) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A product type with similar name already exists.',
+                    'errors' => ['name' => ['Product type name already exists.']]
+                ], 422);
+            }
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             
             Log::info('Product type validation passed', $validatedData);
 
@@ -319,6 +454,7 @@ class ProductController extends Controller
         try {
             $type = ProductType::findOrFail($id);
 
+<<<<<<< HEAD
             // Check if this is a protected type
             if (in_array($type->name, ['regular', 'special'])) {
                 return response()->json([
@@ -328,6 +464,11 @@ class ProductController extends Controller
             }
 
             // Delete products belonging to this type
+=======
+            // REMOVED: Protection for regular and special types
+            // Now all types can be deleted including 'regular' and 'special'
+            
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             $type->products()->delete();
             $type->delete();
 
@@ -342,4 +483,8 @@ class ProductController extends Controller
             ], 500);
         }
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 }

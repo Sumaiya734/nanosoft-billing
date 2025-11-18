@@ -41,18 +41,27 @@
                                 <h6><i class="fas fa-cube me-2"></i>Product Information</h6>
                                 <strong>Product:</strong> {{ $product->name ?? 'N/A' }}<br>
                                 <strong>Type:</strong> {{ ucfirst($product->product_type ?? 'N/A') }}<br>
+<<<<<<< HEAD
                                 <strong>Monthly Price:</strong> ৳{{ number_format($product->monthly_price ?? 0, 2) }}
+=======
+                                <strong>Original Price:</strong> ৳{{ number_format($product->monthly_price ?? 0, 2) }}
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                             </div>
                         </div>
                     </div>
 
                     <!-- FIXED FORM ACTION - Use cp_id as the route parameter -->
+<<<<<<< HEAD
                     <form action="{{ route('admin.customer-to-products.update', $customerProduct->cp_id) }}" method="POST" id="editProductForm">
+=======
+                    <form action="{{ route('admin.customer-to-products.update', $customerProduct->cp_id) }}" method="POST">
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                         @csrf
                         @method('PUT')
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
+<<<<<<< HEAD
                                 <label for="assign_date" class="form-label">Assign Date *</label>
                                 <input type="date" class="form-control @error('assign_date') is-invalid @enderror" 
                                        id="assign_date" name="assign_date" 
@@ -81,6 +90,9 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Billing Cycle (Months) *</label>
+=======
+                                <label for="billing_cycle_months" class="form-label">Billing Cycle (Months) *</label>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                 <input type="number" class="form-control @error('billing_cycle_months') is-invalid @enderror" 
                                        id="billing_cycle_months" name="billing_cycle_months" 
                                        value="{{ old('billing_cycle_months', $customerProduct->billing_cycle_months) }}" min="1" max="12" required>
@@ -102,6 +114,7 @@
                             </div>
                         </div>
 
+<<<<<<< HEAD
                         <!-- NEW: Custom Total Amount Section -->
                         <div class="row mb-3">
                             <div class="col-12">
@@ -140,12 +153,26 @@
                                         </div>
                                     </div>
                                 </div>
+=======
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Assign Date</label>
+                                <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($customerProduct->assign_date)->format('M d, Y') }}" readonly>
+                                <small class="text-muted">Original assignment date</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Due Date</label>
+                                <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($customerProduct->due_date)->format('M d, Y') }}" readonly>
+                                <small class="text-muted">Calculated due date</small>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-12">
                                 <div class="alert alert-warning">
+<<<<<<< HEAD
                                     <h6><i class="fas fa-calculator me-2"></i>Final Amount Summary</h6>
                                     <strong>Billing Period:</strong> <span id="billing-months-display">{{ $customerProduct->billing_cycle_months }}</span> month(s)<br>
                                     <strong>Monthly Price:</strong> ৳{{ number_format($product->monthly_price ?? 0, 2) }}<br>
@@ -164,6 +191,12 @@
                                             (Calculated total)
                                         @endif
                                     </small>
+=======
+                                    <h6><i class="fas fa-calculator me-2"></i>Total Amount</h6>
+                                    <strong>Monthly:</strong> ৳{{ number_format($product->monthly_price ?? 0, 2) }}<br>
+                                    <strong>Total for <span id="billing-months-display">{{ $customerProduct->billing_cycle_months }}</span> month(s):</strong> 
+                                    ৳<span id="total-display">{{ number_format(($product->monthly_price ?? 0) * $customerProduct->billing_cycle_months, 2) }}</span>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                 </div>
                             </div>
                         </div>
@@ -179,9 +212,38 @@
     </div>
 </div>
 
+<<<<<<< HEAD
 <!-- Hidden input to pass due day value to JavaScript -->
 <input type="hidden" id="current-due-day" value="{{ isset($customerProduct) && $customerProduct->due_date ? \Carbon\Carbon::parse($customerProduct->due_date)->format('j') : '15' }}">
 <input type="hidden" id="original-monthly-price" value="{{ $product->monthly_price ?? 0 }}">
+=======
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const billingMonthsInput = document.getElementById('billing_cycle_months');
+    const billingMonthsDisplay = document.getElementById('billing-months-display');
+    const totalDisplay = document.getElementById('total-display');
+    const monthlyPrice = parseFloat('{{ $product->monthly_price ?? 0 }}');
+
+    function updateTotals() {
+        const months = parseInt(billingMonthsInput.value) || 1;
+        const total = monthlyPrice * months;
+        
+        if (billingMonthsDisplay) {
+            billingMonthsDisplay.textContent = months;
+        }
+        if (totalDisplay) {
+            totalDisplay.textContent = total.toFixed(2);
+        }
+    }
+
+    if (billingMonthsInput) {
+        billingMonthsInput.addEventListener('input', updateTotals);
+        // Initialize on page load
+        updateTotals();
+    }
+});
+</script>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 
 <style>
 .page-title {
@@ -197,6 +259,7 @@
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 </style>
+<<<<<<< HEAD
 @endsection
 
 @section('scripts')
@@ -316,4 +379,6 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateTotals();
 });
 </script>
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
 @endsection

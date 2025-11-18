@@ -146,8 +146,13 @@
                         <tr>
                             <th>Invoice ID</th>
                             <th>Customer Info</th>
+<<<<<<< HEAD
                             <th>Product</th>
                             <th>Subtotal</th>
+=======
+                            <th>products</th>
+                            <th>Bill Amount</th>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                             <th>Previous Due</th>
                             <th>Total Amount</th>
                             <th>Received</th>
@@ -158,6 +163,7 @@
                     </thead>
                     <tbody>
                         @forelse($invoices ?? [] as $invoice)
+<<<<<<< HEAD
                             @php
                                 $currentMonth = \Carbon\Carbon::parse($month . '-01');
                                 // Invoice now directly links to one customer product
@@ -296,6 +302,49 @@
                                                     <div class="mt-1">
                                                         <small class="text-muted">
                                                             <i class="fas fa-info-circle me-1"></i>No due date set
+=======
+                        <tr>
+                            <td>
+                                <strong class="text-primary">{{ $invoice->invoice_number }}</strong>
+                                <br>
+                                <small class="text-muted">{{ \Carbon\Carbon::parse($invoice->issue_date)->format('M j, Y') }}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ $invoice->customer->name ?? 'N/A' }}</h6>
+                                        <div class="text-muted small">
+                                            <div>{{ $invoice->customer->email ?? 'N/A' }}</div>
+                                            <div>{{ $invoice->customer->phone ?? 'N/A' }}</div>
+                                            <div class="mt-1">
+                                                <span class="badge bg-light text-dark">{{ $invoice->customer->customer_id ?? 'N/A' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="products-list">
+                                    @php
+                                        $customerproducts = $invoice->customer->customerproducts ?? collect();
+                                    @endphp
+                                    @if($customerproducts->count() > 0)
+                                        @foreach($customerproducts as $customerproduct)
+                                            @if($customerproduct->product)
+                                            <div class="product-item mb-2">
+                                                <div class="fw-medium text-dark">{{ $customerproduct->product->name ?? 'Unknown product' }}</div>
+                                                <div class="text-muted small">
+                                                    ৳ {{ number_format($customerproduct->product->monthly_price ?? 0, 2) }}/month
+                                                    @if($customerproduct->billing_cycle_months > 1)
+                                                    <span class="badge bg-info">({{ $customerproduct->billing_cycle_months }} months)</span>
+                                                    @endif
+                                                    <div class="mt-1">
+                                                        <small class="text-muted">
+                                                            Status: 
+                                                            <span class="badge bg-{{ $customerproduct->status == 'active' ? 'success' : 'warning' }}">
+                                                                {{ $customerproduct->status }}
+                                                            </span>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                                         </small>
                                                     </div>
                                                 @endif
@@ -458,12 +507,101 @@
                                                     </div>
                                                 </div>
                                             </div>
+<<<<<<< HEAD
+=======
+                                            @endif
+                                        @endforeach
+                                    @else
+                                        <span class="text-muted">No products assigned</span>
+                                    @endif
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="bill-amount">
+                                    <strong class="text-dark">৳ {{ number_format(($invoice->total_amount ?? 0) - ($invoice->previous_due ?? 0), 2) }}</strong>
+                                    <div class="text-muted small">
+                                        <div>Service: ৳ {{ number_format($invoice->service_charge ?? 0, 2) }}</div>
+                                        @if(($invoice->vat_amount ?? 0) > 0)
+                                        <div>VAT: ৳ {{ number_format($invoice->vat_amount ?? 0, 2) }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="previous-due">
+                                    @if(($invoice->previous_due ?? 0) > 0)
+                                        <strong class="text-warning">৳ {{ number_format($invoice->previous_due ?? 0, 2) }}</strong>
+                                        <div class="text-muted small">From previous bills</div>
+                                    @else
+                                        <span class="text-success">-</span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td>
+                                <div class="total-amount">
+                                    <strong class="text-success">৳ {{ number_format($invoice->total_amount ?? 0, 2) }}</strong>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="received-amount">
+                                    @if(($invoice->received_amount ?? 0) > 0)
+                                        <strong class="text-info">৳ {{ number_format($invoice->received_amount ?? 0, 2) }}</strong>
+                                        @if(($invoice->total_amount ?? 0) > 0)
+                                        <div class="text-muted small">
+                                            {{ number_format((($invoice->received_amount ?? 0) / ($invoice->total_amount ?? 1)) * 100, 1) }}% paid
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                         </div>
                                     </td>
                                     <td colspan="8" class="text-center text-muted">No products</td>
                                 </tr>
                             @endif
 
+<<<<<<< HEAD
+=======
+                                    {{-- Payment Button: Only for unpaid or partial invoices --}}
+                                    @if(in_array($invoice->status, ['unpaid', 'partial']))
+                                        <button class="btn btn-outline-success btn-sm payment-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#addPaymentModal"
+                                                data-invoice-id="{{ $invoice->invoice_id }}"
+                                                data-invoice-number="{{ $invoice->invoice_number }}"
+                                                data-customer-name="{{ e($invoice->customer->name ?? 'Customer') }}"
+                                                data-customer-email="{{ e($invoice->customer->email ?? 'N/A') }}"
+                                                data-customer-phone="{{ e($invoice->customer->phone ?? 'N/A') }}"
+                                                data-total-amount="{{ $invoice->total_amount ?? 0 }}"
+                                                data-due-amount="{{ $invoice->next_due ?? 0 }}"
+                                                data-received-amount="{{ $invoice->received_amount ?? 0 }}"
+                                                data-status="{{ $invoice->status }}"
+                                                title="Add Payment">
+                                            <i class="fas fa-money-bill-wave"></i> Payment
+                                        </button>
+                                    @else
+                                        <button class="btn btn-outline-success btn-sm" disabled title="Invoice already paid">
+                                            <i class="fas fa-check me-1"></i> Paid
+                                        </button>
+                                    @endif
+
+                                    {{-- Reminder Button: Only for unpaid or partial invoices --}}
+                                    @if(in_array($invoice->status, ['unpaid', 'partial']))
+                                        <button class="btn btn-outline-info btn-sm"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#sendReminderModal"
+                                                data-invoice-id="{{ $invoice->invoice_id }}"
+                                                data-customer-name="{{ e($invoice->customer->name ?? 'Customer') }}"
+                                                data-customer-email="{{ e($invoice->customer->email ?? 'N/A') }}"
+                                                title="Send Payment Reminder">
+                                            <i class="fas fa-bell"></i> Reminder
+                                        </button>
+                                    @else
+                                        <button class="btn btn-outline-secondary btn-sm" disabled title="No reminder needed">
+                                            <i class="fas fa-bell-slash me-1"></i> No Reminder
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                         @empty
                             <tr>
                                 <td colspan="11" class="text-center py-4">
@@ -579,6 +717,7 @@
                 <h5 class="modal-title">Generate Monthly Bills</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+<<<<<<< HEAD
             <div class="modal-body">
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
@@ -587,10 +726,21 @@
                 
                 <form id="generateBillsForm">
                     <input type="hidden" name="month" value="{{ $month }}">
+=======
+            <form action="{{ route('admin.billing.generate-monthly-bills') }}" method="POST">
+                @csrf
+                <input type="hidden" name="month" value="{{ $month }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This will generate bills for all active customers with products in {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}
+                    </div>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                     <div class="mb-3">
                         <label class="form-label">Billing Month</label>
                         <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}" readonly>
                     </div>
+<<<<<<< HEAD
                     
                     <div class="mb-4">
                         <label class="form-label">Generation Options</label>
@@ -601,6 +751,13 @@
                                 <div class="text-muted small">Generate bills only for customers who are due based on their billing cycle</div>
                             </label>
                         </div>
+=======
+                    <div class="mb-3">
+                        <label class="form-label">Active Customers with products</label>
+                        <input type="text" class="form-control" value="{{ $totalCustomers ?? 0 }} customers" readonly>
+                    </div>
+                    <div class="mb-3">
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="generationType" id="allCustomers" value="all_customers">
                             <label class="form-check-label" for="allCustomers">
@@ -726,6 +883,7 @@
         font-weight: 500;
     }
 
+<<<<<<< HEAD
     /* Enhanced badge styles for better visibility */
     .badge.bg-success {
         background-color: #06d6a0 !important;
@@ -758,6 +916,8 @@
         opacity: 0.8;
     }
 
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
     .products-list .product-item {
         padding: 8px;
         border-left: 3px solid var(--primary);

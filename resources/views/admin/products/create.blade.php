@@ -44,35 +44,49 @@
                             <label class="form-label fw-semibold">Product Name *</label>
                             <input type="text" 
                                    name="name" 
+<<<<<<< HEAD
 
 
                                    id="productName"
 
+=======
+                                   id="productName"
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                    class="form-control form-control-lg" 
                                    placeholder="e.g., Basic Plan, Premium Speed, Business Product" 
                                    required
                                    autofocus>
                             <div class="form-text">
+<<<<<<< HEAD
 
                                 Choose a descriptive name for your product.
 
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                 Choose a descriptive name for your product. Must be unique.
                             </div>
                             <div id="nameDuplicateWarning" class="text-warning small mt-1 d-none">
                                 <i class="fas fa-exclamation-triangle me-1"></i>
                                 <span id="duplicateMessage"></span>
+<<<<<<< HEAD
 
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                             </div>
                         </div>
 
                         <!-- Product Type -->
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Product Type *</label>
+<<<<<<< HEAD
 
                             <select name="product_type_id" class="form-control form-control-lg" required>
 
                             <select name="product_type_id" id="productType" class="form-control form-control-lg" required>
 
+=======
+                            <select name="product_type_id" id="productType" class="form-control form-control-lg" required>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                 <option value="">Select Product Type</option>
                                 @foreach($productTypes as $type)
                                     <option value="{{ $type->id }}">{{ ucfirst($type->name) }}</option>
@@ -90,10 +104,14 @@
                                 <span class="input-group-text">৳</span>
                                 <input type="number" 
                                        name="monthly_price" 
+<<<<<<< HEAD
 
 
                                        id="monthlyPrice"
 
+=======
+                                       id="monthlyPrice"
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                                        class="form-control" 
                                        placeholder="0.00" 
                                        step="0.01" 
@@ -118,6 +136,7 @@
                             </div>
                         </div>
 
+<<<<<<< HEAD
 
                         <!-- Features (Optional) -->
                         <div class="mb-4">
@@ -143,6 +162,11 @@
                             <i class="fas fa-info-circle me-2"></i>
                             <strong>Duplicate Prevention:</strong> The system will check for existing products with the same name.
 
+=======
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Duplicate Prevention:</strong> The system will check for existing products with the same name.
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
                         </div>
 
                         <div class="d-grid gap-2">
@@ -154,6 +178,7 @@
                     </form>
                 </div>
             </div>
+<<<<<<< HEAD
 
 
             <!-- Product Preview -->
@@ -171,6 +196,8 @@
                 </div>
             </div>
 
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
         </div>
     </div>
 </div>
@@ -188,6 +215,7 @@
         font-size: 1.1rem;
     }
 
+<<<<<<< HEAD
 
     .feature-tag {
         display: inline-block;
@@ -220,6 +248,8 @@
         color: #2c3e50;
         margin-bottom: 10px;
 
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
     .is-duplicate {
         border-color: #ffc107 !important;
         background-color: #fffbf0;
@@ -228,7 +258,10 @@
     .is-conflict {
         border-color: #fd7e14 !important;
         background-color: #fff4e6;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
     }
 </style>
 @endsection
@@ -236,12 +269,15 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+<<<<<<< HEAD
 
         // CSRF token with error handling
     });
 </script>
 @endsection
 
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
         // CSRF token
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         
@@ -412,5 +448,9 @@
         });
     });
 </script>
+<<<<<<< HEAD
 @endsection
 
+=======
+@endsection
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770

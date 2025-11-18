@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+<<<<<<< HEAD
     <meta name="base-url" content="{{ url('/') }}">
+=======
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
     <title>@yield('title') - Nanosft-Billing</title>
         <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -264,10 +267,17 @@
             <button class="btn btn-dark d-md-none" type="button" id="sidebarToggle">
                 <i class="fas fa-bars"></i>
             </button>
+<<<<<<< HEAD
                 <a class="navbar-brand" href="{{ route('home') }}">
                     <i class="fas fa-money-bill-wave"></i>
                         Nanosoft-Billing
                 </a>
+=======
+            <a class="navbar-brand" href="{{ route('admin.dashboard') }}">
+            <i class="fas fa-money-bill-wave"></i>
+            Nanosoft-Billing
+        </a>
+>>>>>>> 022ca1b083b8ee467518f7776a293591bd863770
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text text-white me-3">
                     <i class="fas fa-user-circle me-1"></i>Welcome, {{ Auth::user()->name }}
