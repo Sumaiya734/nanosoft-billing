@@ -1,6 +1,7 @@
 // Payment Modal Functions
 class PaymentModal {
     constructor() {
+        this.isSubmitting = false;
         this.init();
     }
 
@@ -74,7 +75,9 @@ class PaymentModal {
     }
 
     async fetchInvoiceData(invoiceId) {
-        const response = await fetch(`/admin/billing/invoice/${invoiceId}/data`);
+        // Get the base URL from the current page
+        const baseUrl = document.querySelector('meta[name="base-url"]')?.content || window.location.origin;
+        const response = await fetch(`${baseUrl}/admin/billing/invoice/${invoiceId}/data`);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -97,28 +100,31 @@ class PaymentModal {
         const receivedAmount = button.data('received-amount');
         const status = button.data('status');
         
+        // Product-specific data
+        const cpId = button.data('cp-id');
+        const productName = button.data('product-name');
+        const productPrice = button.data('product-price');
+        const billingCycle = button.data('billing-cycle') || 1;
+        const productAmount = button.data('product-amount');
+        
         console.log('Populating from button data:', {
             invoiceId, invoiceNumber, customerName, customerEmail, customerPhone,
-            totalAmount, dueAmount, receivedAmount, status
+            totalAmount, dueAmount, receivedAmount, status,
+            cpId, productName, productPrice, billingCycle, productAmount
         });
         
         // Set form action and invoice ID
         if (invoiceId) {
-            // More robust base URL detection
-            let basePath = window.location.origin;
-            // Check if we're in a subdirectory setup
-            if (window.location.pathname.includes('/ik/netbill-bd/')) {
-                if (window.location.pathname.includes('/public/')) {
-                    basePath += '/ik/netbill-bd/public';
-                } else {
-                    basePath += '/ik/netbill-bd';
-                }
-            }
-            $('#addPaymentForm').attr('action', `${basePath}/admin/billing/record-payment/${invoiceId}`);
+            const baseUrl = document.querySelector('meta[name="base-url"]')?.content || window.location.origin;
+            let fullPath = `${baseUrl}/admin/billing/record-payment/${invoiceId}`;
+            fullPath = fullPath.replace(/(\/netbill-bd\/public){2,}/g, '/netbill-bd/public');
+            
+            $('#addPaymentForm').attr('action', fullPath);
             $('#payment_invoice_id').val(invoiceId);
+            $('#payment_cp_id').val(cpId);
         }
         
-        // Populate all fields with button data
+        // Populate invoice and customer fields
         $('#payment_invoice_number_display').text(invoiceNumber || 'N/A');
         $('#payment_customer_name_display').text(customerName || 'N/A');
         $('#payment_customer_email_display').text(customerEmail || 'N/A');
@@ -126,6 +132,12 @@ class PaymentModal {
         $('#payment_total_amount_display').text('৳ ' + (parseFloat(totalAmount) || 0).toLocaleString('en-BD', {minimumFractionDigits: 2}));
         $('#payment_due_amount_display').text('৳ ' + (parseFloat(dueAmount) || 0).toLocaleString('en-BD', {minimumFractionDigits: 2}));
         $('#payment_received_amount_display').text('৳ ' + (parseFloat(receivedAmount) || 0).toLocaleString('en-BD', {minimumFractionDigits: 2}));
+        
+        // Populate product-specific fields
+        $('#payment_product_name').text(productName || 'Unknown Product');
+        $('#payment_product_price').text('৳ ' + (parseFloat(productPrice) || 0).toLocaleString('en-BD', {minimumFractionDigits: 2}));
+        $('#payment_billing_cycle').text(billingCycle > 1 ? `${billingCycle} months` : 'Monthly');
+        $('#payment_product_amount').text('৳ ' + (parseFloat(productAmount) || 0).toLocaleString('en-BD', {minimumFractionDigits: 2}));
         
         // Set status badge
         const statusDisplay = $('#payment_status_display');
@@ -147,36 +159,34 @@ class PaymentModal {
                 statusDisplay.addClass('bg-secondary');
         }
         
-        // Set payment amount to due amount by default
+        // Set payment amount to product amount by default (for this specific product)
         const paymentAmountField = $('#payment_amount');
-        const dueAmt = parseFloat(dueAmount) || 0;
-        paymentAmountField.val(dueAmt.toFixed(2));
-        paymentAmountField.attr('max', dueAmt);
+        const prodAmt = parseFloat(productAmount) || 0;
+        paymentAmountField.val(prodAmt.toFixed(2));
+        paymentAmountField.attr('max', prodAmt);
         paymentAmountField.attr('min', 0.01);
         
         // Update max amount display
-        $('#payment_max_amount').text('৳ ' + dueAmt.toLocaleString('en-BD', {minimumFractionDigits: 2}));
+        $('#payment_max_amount').text('৳ ' + prodAmt.toLocaleString('en-BD', {minimumFractionDigits: 2}));
         
         // Reset validation
         paymentAmountField.removeClass('is-invalid');
         $('#payment_amount_error').hide();
         
-        console.log('Payment modal populated from button data');
+        console.log('Payment modal populated from button data (product-specific)');
     }
 
     populateModal(invoiceId, invoice) {
         // Set the form action with invoice ID
-        // More robust base URL detection
-        let basePath = window.location.origin;
-        // Check if we're in a subdirectory setup
-        if (window.location.pathname.includes('/ik/netbill-bd/')) {
-            if (window.location.pathname.includes('/public/')) {
-                basePath += '/ik/netbill-bd/public';
-            } else {
-                basePath += '/ik/netbill-bd';
-            }
-        }
-        $('#addPaymentForm').attr('action', `${basePath}/admin/billing/record-payment/${invoiceId}`);
+        // Get the base URL from meta tag or current origin
+        const baseUrl = document.querySelector('meta[name="base-url"]')?.content || window.location.origin;
+        
+        // Ensure we have the correct path without duplication
+        let fullPath = `${baseUrl}/admin/billing/record-payment/${invoiceId}`;
+        // Remove any duplicate paths
+        fullPath = fullPath.replace(/(\/netbill-bd\/public){2,}/g, '/netbill-bd/public');
+        
+        $('#addPaymentForm').attr('action', fullPath);
         $('#payment_invoice_id').val(invoiceId);
 
         // Format currency values
@@ -229,6 +239,9 @@ class PaymentModal {
         // Calculate initial received amount and next due
         this.calculateReceivedAndDue();
         
+        // Display products
+        this.displayProducts(invoice);
+        
         console.log('Payment modal populated with database data');
     }
 
@@ -247,6 +260,76 @@ class PaymentModal {
         } else {
             $(input).removeClass('is-invalid');
             $('#payment_amount_error').hide();
+        }
+    }
+
+    async fetchAndDisplayProducts(invoiceId) {
+        const productsContainer = $('#payment_products_display');
+        productsContainer.html('<div class="text-center"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div> Loading products...</div>');
+        
+        try {
+            const baseUrl = document.querySelector('meta[name="base-url"]')?.content || window.location.origin;
+            const response = await fetch(`${baseUrl}/admin/billing/invoice/${invoiceId}/data`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch invoice data');
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.invoice) {
+                this.displayProducts(data.invoice);
+            } else {
+                productsContainer.html('<p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i>No product information available</p>');
+            }
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            productsContainer.html('<p class="text-warning mb-0"><i class="fas fa-exclamation-triangle me-1"></i>Could not load products</p>');
+        }
+    }
+
+    displayProducts(invoice) {
+        const productsContainer = $('#payment_products_display');
+        
+        // Check if invoice has customer with products
+        if (invoice.customer && invoice.customer.customerproducts && invoice.customer.customerproducts.length > 0) {
+            let productsHtml = '<div class="row g-2">';
+            
+            invoice.customer.customerproducts.forEach((customerProduct, index) => {
+                if (customerProduct.product) {
+                    const product = customerProduct.product;
+                    const monthlyPrice = parseFloat(product.monthly_price) || 0;
+                    const billingCycle = customerProduct.billing_cycle_months || 1;
+                    const totalPrice = monthlyPrice * billingCycle;
+                    
+                    productsHtml += `
+                        <div class="col-12 col-md-6">
+                            <div class="product-item p-2 border rounded bg-light">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 text-dark">
+                                            <i class="fas fa-box-open me-1 text-primary"></i>
+                                            ${product.name || 'Unknown Product'}
+                                        </h6>
+                                        <div class="text-muted small">
+                                            <div>৳${monthlyPrice.toLocaleString('en-BD', {minimumFractionDigits: 2})}/month</div>
+                                            ${billingCycle > 1 ? `<div><span class="badge bg-info text-white">×${billingCycle} months cycle</span></div>` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-success">৳${totalPrice.toLocaleString('en-BD', {minimumFractionDigits: 2})}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            productsHtml += '</div>';
+            productsContainer.html(productsHtml);
+        } else {
+            productsContainer.html('<p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i>No products assigned to this invoice</p>');
         }
     }
 
@@ -288,9 +371,21 @@ class PaymentModal {
     async handlePaymentSubmit(e) {
         e.preventDefault();
         
+        // Prevent duplicate submissions
+        if (this.isSubmitting) {
+            console.log('Form already submitting, ignoring duplicate submission');
+            return;
+        }
+        
         const form = e.target;
-        const formData = new FormData(form);
         const submitBtn = $(form).find('button[type="submit"]');
+        
+        // Double-check button state
+        if (submitBtn.prop('disabled')) {
+            return;
+        }
+        
+        const formData = new FormData(form);
         const originalText = submitBtn.html();
         
         // Validate amount
@@ -298,7 +393,8 @@ class PaymentModal {
             return;
         }
 
-        // Show loading
+        // Set submission flag and disable button immediately
+        this.isSubmitting = true;
         submitBtn.html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Processing...');
         submitBtn.prop('disabled', true);
         
@@ -325,12 +421,14 @@ class PaymentModal {
                 setTimeout(() => location.reload(), 1500);
             } else {
                 this.showToast(data.message || 'Error recording payment!', 'error');
+                this.isSubmitting = false;
                 submitBtn.html(originalText);
                 submitBtn.prop('disabled', false);
             }
         } catch (error) {
             console.error('Error:', error);
             this.showToast('Error processing payment. Please try again.', 'error');
+            this.isSubmitting = false;
             submitBtn.html(originalText);
             submitBtn.prop('disabled', false);
         }
@@ -340,6 +438,14 @@ class PaymentModal {
         const form = $('#addPaymentForm');
         form.trigger('reset');
         form.attr('action', '');
+        
+        // Reset submission flag
+        this.isSubmitting = false;
+        
+        // Re-enable submit button
+        const submitBtn = form.find('button[type="submit"]');
+        submitBtn.prop('disabled', false);
+        submitBtn.html('<i class="fas fa-check me-1"></i>Record Payment');
         
         // Clear display fields
         $('#payment_invoice_number_display').text('-');
@@ -352,9 +458,16 @@ class PaymentModal {
         $('#payment_status_display').text('-');
         $('#payment_status_display').removeClass().addClass('badge bg-secondary');
         
+        // Clear product fields
+        $('#payment_product_name').text('-');
+        $('#payment_product_price').text('৳ 0.00');
+        $('#payment_billing_cycle').text('-');
+        $('#payment_product_amount').text('৳ 0.00');
+        
         // Clear input fields
         $('#received_amount').val('');
         $('#next_due').val('');
+        $('#payment_cp_id').val('');
         
         // Reset validation
         $('#payment_amount').removeClass('is-invalid');

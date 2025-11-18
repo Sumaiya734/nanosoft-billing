@@ -146,11 +146,17 @@ class PaymentController extends Controller
             $newReceived = ($invoice->received_amount ?? 0) + $amount;
             $newDue = $invoice->total_amount - $newReceived;
 
-            $status = $newDue <= 0 ? 'paid' : ($newReceived > 0 ? 'partial' : 'unpaid');
+            // Handle floating point precision - consider amounts less than 0.01 as zero
+            if ($newDue < 0.01) {
+                $newDue = 0;
+                $status = 'paid';
+            } else {
+                $status = $newReceived > 0 ? 'partial' : 'unpaid';
+            }
 
             $invoice->update([
                 'received_amount' => $newReceived,
-                'next_due'        => $newDue > 0 ? $newDue : 0,
+                'next_due'        => $newDue,
                 'status'          => $status,
             ]);
         });

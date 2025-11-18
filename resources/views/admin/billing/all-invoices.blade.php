@@ -75,7 +75,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Invoice 1 - Single Regular Package -->
+                            <!-- Invoice 1 - Single Regular product -->
                             <tr>
                                 <td class="fw-bold">#INV-2024-001</td>
                                 <td>
@@ -99,10 +99,10 @@
                                 </td>
                                 <td>
                                     <div class="services-tags">
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <span class="badge bg-primary">Basic Speed</span>
                                         </div>
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <small class="text-muted">৳500/month</small>
                                         </div>
                                     </div>
@@ -146,7 +146,7 @@
                                 </td>
                             </tr>
                             
-                            <!-- Invoice 2 - Regular + Special Package -->
+                            <!-- Invoice 2 - Regular + Special product -->
                             <tr>
                                 <td class="fw-bold">#INV-2024-002</td>
                                 <td>
@@ -170,11 +170,11 @@
                                 </td>
                                 <td>
                                     <div class="services-tags">
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <span class="badge bg-success">Fast Speed</span>
                                             <span class="badge bg-warning">Gaming Boost</span>
                                         </div>
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <small class="text-muted">৳800 + ৳200/month</small>
                                         </div>
                                     </div>
@@ -213,7 +213,7 @@
                                 </td>
                             </tr>
                             
-                            <!-- Invoice 3 - Regular + Special Package -->
+                            <!-- Invoice 3 - Regular + Special product -->
                             <tr>
                                 <td class="fw-bold">#INV-2023-125</td>
                                 <td>
@@ -237,11 +237,11 @@
                                 </td>
                                 <td>
                                     <div class="services-tags">
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <span class="badge bg-danger">Super Speed</span>
                                             <span class="badge bg-info">Streaming Plus</span>
                                         </div>
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <small class="text-muted">৳1,200 + ৳150/month</small>
                                         </div>
                                     </div>
@@ -280,7 +280,7 @@
                                 </td>
                             </tr>
                             
-                            <!-- Invoice 4 - Single Regular Package -->
+                            <!-- Invoice 4 - Single Regular product -->
                             <tr>
                                 <td class="fw-bold">#INV-2023-098</td>
                                 <td>
@@ -304,10 +304,10 @@
                                 </td>
                                 <td>
                                     <div class="services-tags">
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <span class="badge bg-success">Fast Speed</span>
                                         </div>
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <small class="text-muted">৳800/month</small>
                                         </div>
                                     </div>
@@ -346,7 +346,7 @@
                                 </td>
                             </tr>
                             
-                            <!-- Invoice 5 - Regular + Special Package -->
+                            <!-- Invoice 5 - Regular + Special product -->
                             <tr>
                                 <td class="fw-bold">#INV-2023-076</td>
                                 <td>
@@ -370,11 +370,11 @@
                                 </td>
                                 <td>
                                     <div class="services-tags">
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <span class="badge bg-danger">Super Speed</span>
                                             <span class="badge bg-purple">Family Pack</span>
                                         </div>
-                                        <div class="package-line">
+                                        <div class="product-line">
                                             <small class="text-muted">৳1,200 + ৳300/month</small>
                                         </div>
                                     </div>
@@ -479,8 +479,8 @@
                         
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">Regular Package</label>
-                                <select class="form-select" id="regularPackage">
+                                <label class="form-label">Regular product</label>
+                                <select class="form-select" id="regularproduct">
                                     <option value="500">Basic Speed (৳500)</option>
                                     <option value="800" selected>Fast Speed (৳800)</option>
                                     <option value="1200">Super Speed (৳1,200)</option>
@@ -525,8 +525,8 @@
                                         <h6 class="card-title">Invoice Calculation</h6>
                                         <div class="calculation-breakdown">
                                             <div class="breakdown-item">Service Charge: ৳50</div>
-                                            <div class="breakdown-item" id="regularPackageDisplay">+ Regular Package: ৳800</div>
-                                            <div class="breakdown-item" id="specialPackagesDisplay">+ Special Packages: ৳0</div>
+                                            <div class="breakdown-item" id="regularproductDisplay">+ Regular product: ৳800</div>
+                                            <div class="breakdown-item" id="specialproductsDisplay">+ Special products: ৳0</div>
                                             <div class="breakdown-item" id="vatDisplay">+ VAT (7%): ৳59.50</div>
                                             <div class="breakdown-item" id="discountDisplay">- Discount (0%): ৳0</div>
                                             <div class="total-amount" id="totalDisplay">TOTAL: ৳909.50</div>
@@ -649,7 +649,7 @@
         min-width: 150px;
     }
     
-    .package-line {
+    .product-line {
         margin-bottom: 4px;
     }
     
@@ -761,30 +761,30 @@
     // Invoice Calculation Logic
     function calculateInvoice() {
         const serviceCharge = 50;
-        const regularPackage = parseInt(document.getElementById('regularPackage').value);
+        const regularProduct = parseInt(document.getElementById('regularProduct').value);
         const vatRate = 0.07;
         const discountRate = parseInt(document.getElementById('discount').value) / 100;
         
-        let specialPackages = 0;
+        let specialProducts = 0;
         document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
-            specialPackages += parseInt(checkbox.value);
+            specialProducts += parseInt(checkbox.value);
         });
         
-        const subtotal = serviceCharge + regularPackage + specialPackages;
+        const subtotal = serviceCharge + regularProduct + specialProducts;
         const vatAmount = subtotal * vatRate;
         const discountAmount = subtotal * discountRate;
         const total = subtotal + vatAmount - discountAmount;
         
         // Update display
-        document.getElementById('regularPackageDisplay').textContent = `+ Regular Package: ৳${regularPackage}`;
-        document.getElementById('specialPackagesDisplay').textContent = `+ Special Packages: ৳${specialPackages}`;
+        document.getElementById('regularProductDisplay').textContent = `+ Regular Product: ৳${regularProduct}`;
+        document.getElementById('specialProductsDisplay').textContent = `+ Special Products: ৳${specialProducts}`;
         document.getElementById('vatDisplay').textContent = `+ VAT (7%): ৳${vatAmount.toFixed(2)}`;
         document.getElementById('discountDisplay').textContent = `- Discount (${discountRate * 100}%): ৳${discountAmount.toFixed(2)}`;
         document.getElementById('totalDisplay').textContent = `TOTAL: ৳${total.toFixed(2)}`;
     }
 
     // Add event listeners for calculation
-    document.getElementById('regularPackage').addEventListener('change', calculateInvoice);
+    document.getElementById('regularproduct').addEventListener('change', calculateInvoice);
     document.getElementById('discount').addEventListener('change', calculateInvoice);
     document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
         checkbox.addEventListener('change', calculateInvoice);

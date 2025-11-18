@@ -16,12 +16,9 @@ class Invoice extends Model
 
     protected $fillable = [
         'invoice_number',
-        'c_id',
+        'cp_id',
         'issue_date',
         'previous_due',
-        'service_charge',
-        'vat_percentage',
-        'vat_amount',
         'subtotal',
         'total_amount',
         'received_amount',
@@ -34,9 +31,6 @@ class Invoice extends Model
     protected $casts = [
         'issue_date' => 'date',
         'previous_due' => 'decimal:2',
-        'service_charge' => 'decimal:2',
-        'vat_percentage' => 'decimal:2',
-        'vat_amount' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'received_amount' => 'decimal:2',
@@ -64,14 +58,35 @@ class Invoice extends Model
 
     // ==================== RELATIONSHIPS ====================
 
-    public function customer(): BelongsTo
+    public function customerProduct(): BelongsTo
     {
-        return $this->belongsTo(Customer::class, 'c_id', 'c_id');
+        return $this->belongsTo(CustomerProduct::class, 'cp_id', 'cp_id');
     }
 
-    public function invoicePackages(): HasMany
+    // Backward compatibility: Access customer through customerProduct
+    public function customer(): BelongsTo
     {
-        return $this->hasMany(InvoicePackage::class, 'invoice_id', 'invoice_id');
+        // This is now a through relationship, but we'll use an accessor
+        return $this->belongsTo(Customer::class, 'cp_id', 'c_id')
+                    ->join('customer_to_products', 'customers.c_id', '=', 'customer_to_products.c_id')
+                    ->where('customer_to_products.cp_id', $this->cp_id);
+    }
+
+    // Better approach: Use accessor for customer
+    public function getCustomerAttribute()
+    {
+        return $this->customerProduct?->customer;
+    }
+
+    // Accessor for product
+    public function getProductAttribute()
+    {
+        return $this->customerProduct?->product;
+    }
+
+    public function invoiceProducts(): HasMany
+    {
+        return $this->hasMany(InvoiceProduct::class, 'invoice_id', 'invoice_id');
     }
 
     public function payments(): HasMany
@@ -114,7 +129,14 @@ class Invoice extends Model
 
     public function scopeByCustomer(Builder $query, int $customerId): Builder
     {
-        return $query->where('c_id', $customerId);
+        return $query->whereHas('customerProduct', function ($q) use ($customerId) {
+            $q->where('c_id', $customerId);
+        });
+    }
+
+    public function scopeByCustomerProduct(Builder $query, int $cpId): Builder
+    {
+        return $query->where('cp_id', $cpId);
     }
 
     public function scopeByStatus(Builder $query, string $status): Builder
@@ -144,6 +166,30 @@ class Invoice extends Model
     }
 
     // ==================== ACCESSORS ====================
+
+    /**
+     * Get the calculated product amount based on cp_id
+     */
+    public function getCalculatedProductAmountAttribute(): float
+    {
+        if (!$this->customerProduct) {
+            return 0.0;
+        }
+        
+        $monthlyPrice = (float) ($this->customerProduct->product->monthly_price ?? 0);
+        $billingCycle = (int) ($this->customerProduct->billing_cycle_months ?? 1);
+        
+        return $monthlyPrice * $billingCycle;
+    }
+
+    /**
+     * Get the default subtotal (can be overridden manually)
+     * Subtotal = monthly_price × billing_cycle_months (current charges only)
+     */
+    public function getDefaultSubtotalAttribute(): float
+    {
+        return $this->calculated_product_amount;
+    }
 
     public function getDueAmountAttribute(): float
     {
@@ -254,7 +300,8 @@ class Invoice extends Model
     public function addPayment(float $amount, string $method = 'cash', string $transactionId = null): Payment
     {
         $payment = $this->payments()->create([
-            'c_id' => $this->c_id,
+            'cp_id' => $this->cp_id,
+            'c_id' => $this->customerProduct->c_id,
             'amount' => $amount,
             'payment_method' => $method,
             'payment_date' => now(),
@@ -302,22 +349,22 @@ class Invoice extends Model
         ]);
     }
 
-    public function getPackageNames(): string
+    public function getProductNames(): string
     {
-        return $this->invoicePackages->map(function ($invoicePackage) {
-            return $invoicePackage->package->name ?? 'Unknown Package';
+        return $this->invoiceProducts->map(function ($invoiceProduct) {
+            return $invoiceProduct->product->name ?? 'Unknown Product';
         })->implode(', ');
     }
 
-    public function getTotalPackageAmount(): float
+    public function getTotalProductAmount(): float
     {
-        return $this->invoicePackages->sum('total_package_amount');
+        return $this->invoiceProducts->sum('total_product_amount');
     }
 
     public function recalculateTotals(): bool
     {
-        $packageTotal = $this->getTotalPackageAmount();
-        $subtotal = $packageTotal + $this->previous_due + $this->service_charge;
+        $productTotal = $this->getTotalProductAmount();
+        $subtotal = $productTotal + $this->previous_due + $this->service_charge;
         $vatAmount = $subtotal * ($this->vat_percentage / 100);
         $totalAmount = $subtotal + $vatAmount;
 
@@ -379,13 +426,21 @@ class Invoice extends Model
                 $invoice->issue_date = now()->toDateString();
             }
 
-            // Set default values
-            if (empty($invoice->service_charge)) {
-                $invoice->service_charge = 50.00;
+            // Auto-calculate subtotal if not manually set
+            // Subtotal = monthly_price × billing_cycle_months (current charges only)
+            if (empty($invoice->subtotal) && $invoice->cp_id) {
+                // Load the relationship if not already loaded
+                if (!$invoice->relationLoaded('customerProduct')) {
+                    $invoice->load('customerProduct.product');
+                }
+                
+                $productAmount = $invoice->calculated_product_amount;
+                $invoice->subtotal = $productAmount;
             }
-
-            if (empty($invoice->vat_percentage)) {
-                $invoice->vat_percentage = 5.00;
+            
+            // Total amount = subtotal + previous_due
+            if (!empty($invoice->subtotal)) {
+                $invoice->total_amount = $invoice->subtotal + ($invoice->previous_due ?? 0);
             }
 
             // Initialize amounts if not set

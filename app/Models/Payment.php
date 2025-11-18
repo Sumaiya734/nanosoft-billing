@@ -11,12 +11,20 @@ class Payment extends Model
 
     protected $primaryKey = 'payment_id';
     
+    // Ensure the primary key is auto-incrementing
+    public $incrementing = true;
+    
+    // Specify the key type
+    protected $keyType = 'int';
+    
     protected $fillable = [
         'invoice_id',
         'c_id',
+        'cp_id',
         'amount',
         'payment_method',
         'payment_date',
+        'transaction_id',
         'collected_by',
         'status',
         'notes'
@@ -38,6 +46,11 @@ class Payment extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'c_id', 'c_id');
+    }
+
+    public function customerProduct()
+    {
+        return $this->belongsTo(CustomerProduct::class, 'cp_id', 'cp_id');
     }
 
     public function collector()
@@ -67,7 +80,7 @@ class Payment extends Model
         return \Carbon\Carbon::parse($this->payment_date)->format('M j, Y');
     }
    
- public function getPaymentMethodTextAttribute()
+    public function getPaymentMethodTextAttribute()
     {
         $methods = [
             'cash' => 'Cash',
